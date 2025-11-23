@@ -10,4 +10,14 @@ public class Main {
             throw new RuntimeException(e);
         }
     }
+
+    // Para mostrar la imagen, obteniendo los bytes de la base de datos: "archivo" (No lo he probado, puede que no funcione):
+//    byte[] bytesImagen = evidencia.getArchivo(); // viene de la base de datos
+//
+//    InputStream in = new ByteArrayInputStream(bytesImagen);
+//    BufferedImage image = ImageIO.read(in);
+//    ImageIcon icon = new ImageIcon(image);
+//
+//    // Mostrar en un JLabel
+//    JLabel label = new JLabel(icon);
 }
