@@ -1,11 +1,14 @@
 package com.vectorgarman;
 
+import com.vectorgarman.api.ClienteAPI;
+import com.vectorgarman.dto.ApiResponse;
+
 public class Main {
     public static void main(String[] args) {
         ClienteAPI clienteAPI = new ClienteAPI();
         try {
-            dto.Usuario usuario = clienteAPI.getUsuarioPorId(3L);
-            System.out.println("Usuario: " + usuario);
+            ApiResponse<?> apiResponse = clienteAPI.getUsuarioPorId(26L);
+            System.out.println("Usuario: " + apiResponse.getData());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
