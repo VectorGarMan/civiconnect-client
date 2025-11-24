@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.vectorgarman.dto.ApiResponse;
+import com.vectorgarman.dto.Usuario;
 
 import java.net.URI;
 import java.net.http.HttpClient;
