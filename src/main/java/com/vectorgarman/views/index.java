@@ -3,12 +3,12 @@ package com.vectorgarman.views;
 import javax.swing.*;
 import java.awt.event.*;
 
-public class LoginForm extends JDialog {
+public class index extends JDialog {
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
 
-    public LoginForm() {
+    public index() {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
@@ -52,7 +52,7 @@ public class LoginForm extends JDialog {
     }
 
     public static void main(String[] args) {
-        LoginForm dialog = new LoginForm();
+        index dialog = new index();
         dialog.pack();
         dialog.setVisible(true);
         System.exit(0);
