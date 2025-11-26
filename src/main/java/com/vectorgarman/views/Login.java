@@ -225,7 +225,6 @@ public class Login extends JDialog {
         }).start();
     }
 
-    // Método auxiliar para obtener valores de campos usando reflexión
     private Object getFieldValue(Object obj, String fieldName) {
         try {
             java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
@@ -262,7 +261,7 @@ public class Login extends JDialog {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
 
         SwingUtilities.invokeLater(new Runnable() {

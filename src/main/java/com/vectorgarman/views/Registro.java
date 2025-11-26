@@ -4,12 +4,10 @@ import com.vectorgarman.api.ClienteAPI;
 import com.vectorgarman.dto.*;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class Registro extends JDialog {
     private JPanel contentPane;
@@ -381,13 +379,11 @@ public class Registro extends JDialog {
                     if ("OK".equals(status)) {
                         Object dataObj = getFieldValue(response, "data");
 
-                        if (dataObj instanceof List) {
+                        if (dataObj instanceof List<?> tiposdeusuario) {
                             comboTipoUsuario.removeAllItems();
 
-                            List<?> tiposdeusuario = (List<?>) dataObj;
                             for (Object item : tiposdeusuario) {
-                                if (item instanceof Map) {
-                                    Map<?, ?> tiposdeusuarioMap = (Map<?, ?>) item;
+                                if (item instanceof Map<?, ?> tiposdeusuarioMap) {
 
                                     // Extraer los valores
                                     Object idObj = tiposdeusuarioMap.get("idtipousuario");
@@ -443,13 +439,11 @@ public class Registro extends JDialog {
                     if ("OK".equals(status)) {
                         Object dataObj = getFieldValue(response, "data");
 
-                        if (dataObj instanceof List) {
+                        if (dataObj instanceof List<?> estados) {
                             comboEstado.removeAllItems();
 
-                            List<?> estados = (List<?>) dataObj;
                             for (Object item : estados) {
-                                if (item instanceof Map) {
-                                    Map<?, ?> estadoMap = (Map<?, ?>) item;
+                                if (item instanceof Map<?, ?> estadoMap) {
 
                                     // Extraer los valores
                                     Object idObj = estadoMap.get("idestado");
@@ -505,14 +499,12 @@ public class Registro extends JDialog {
                         Object dataObj = getFieldValue(response, "data");
 
 
-                        if (dataObj instanceof List) {
-                            List<?> municipios = (List<?>) dataObj;
+                        if (dataObj instanceof List<?> municipios) {
 
                             comboMunicipio.removeAllItems(); // ← CORRECTO: limpiar municipios
 
                             for (Object item : municipios) {
-                                if (item instanceof Map) {
-                                    Map<?, ?> municipioMap = (Map<?, ?>) item;
+                                if (item instanceof Map<?, ?> municipioMap) {
 
                                     Object idObj = municipioMap.get("idmunicipio");
                                     Object nombreObj = municipioMap.get("nombre");
@@ -563,12 +555,10 @@ public class Registro extends JDialog {
                     if ("OK".equals(status)) {
                         Object dataObj = getFieldValue(response, "data");
 
-                        if (dataObj instanceof List) {
-                            List<?> colonias = (List<?>) dataObj;
+                        if (dataObj instanceof List<?> colonias) {
 
                             for (Object item : colonias) {
-                                if (item instanceof Map) {
-                                    Map<?, ?> coloniaMap = (Map<?, ?>) item;
+                                if (item instanceof Map<?, ?> coloniaMap) {
 
                                     Object idObj = coloniaMap.get("idcolonia");
                                     Object nombreObj = coloniaMap.get("nombre");
@@ -604,9 +594,6 @@ public class Registro extends JDialog {
         }).start();
     }
 
-
-
-    // Método auxiliar para obtener valores de campos usando reflexión
     private Object getFieldValue(Object obj, String fieldName) {
         try {
             java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
@@ -621,7 +608,7 @@ public class Registro extends JDialog {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
 
         SwingUtilities.invokeLater(new Runnable() {
