@@ -319,6 +319,7 @@ public class Registro extends JDialog {
                     String mensaje = mensajeObj != null ? mensajeObj.toString() : "";
                     String detalles = detallesObj != null ? detallesObj.toString() : "";
 
+                    // TODO: validar los STATUS de acuerdo a los RESPONSE de la API
                     switch (status) {
                         case "OK":
                             JOptionPane.showMessageDialog(this,
