@@ -12,6 +12,13 @@ public class Main {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+        try {
+            ApiResponse<?> apiResponse = clienteAPI.getUsuarioPorId(19L);
+            System.out.println("Usuario: " + apiResponse.getData());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // Para mostrar la imagen, obteniendo los bytes de la base de datos: "archivo" (No lo he probado, puede que no funcione):

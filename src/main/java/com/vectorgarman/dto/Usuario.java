@@ -3,22 +3,32 @@ package com.vectorgarman.dto;
 import java.time.LocalDate;
 
 public class Usuario {
+
     private Long idusuario;
+
     private Long idtipousuario;
+
     private Long idcolonia;
+
     private String email;
+
+    private String contrasena;
+
     private String nombreusuario;
-    private LocalDate fecharegistro;
+
+    private LocalDate fecharegistro = LocalDate.now();
+
     private Boolean empleadogubverificado;
 
     public Usuario() {
     }
 
-    public Usuario(Long idusuario, Long idtipousuario, Long idcolonia, String email, String nombreusuario, LocalDate fecharegistro, Boolean empleadogubverificado) {
+    public Usuario(Long idusuario, Long idtipousuario, Long idcolonia, String email, String contrasena, String nombreusuario, LocalDate fecharegistro, Boolean empleadogubverificado) {
         this.idusuario = idusuario;
         this.idtipousuario = idtipousuario;
         this.idcolonia = idcolonia;
         this.email = email;
+        this.contrasena = contrasena;
         this.nombreusuario = nombreusuario;
         this.fecharegistro = fecharegistro;
         this.empleadogubverificado = empleadogubverificado;
@@ -56,6 +66,14 @@ public class Usuario {
         this.email = email;
     }
 
+    public String getContrasena() {
+        return contrasena;
+    }
+
+    public void setContrasena(String contrasena) {
+        this.contrasena = contrasena;
+    }
+
     public String getNombreusuario() {
         return nombreusuario;
     }
@@ -78,18 +96,5 @@ public class Usuario {
 
     public void setEmpleadogubverificado(Boolean empleadogubverificado) {
         this.empleadogubverificado = empleadogubverificado;
-    }
-
-    @Override
-    public String toString() {
-        return "Usuario{" +
-                "idusuario=" + idusuario +
-                ", idtipousuario=" + idtipousuario +
-                ", idcolonia=" + idcolonia +
-                ", email='" + email + '\'' +
-                ", nombreusuario='" + nombreusuario + '\'' +
-                ", fecharegistro=" + fecharegistro +
-                ", empleadogubverificado=" + empleadogubverificado +
-                '}';
     }
 }

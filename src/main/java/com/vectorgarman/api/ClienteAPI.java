@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.vectorgarman.dto.ApiResponse;
-import com.vectorgarman.dto.Usuario;
+import com.vectorgarman.dto.LoginRequest;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -13,12 +13,59 @@ import java.net.http.HttpResponse;
 import java.time.LocalDate;
 
 public class ClienteAPI {
+
+    private static final String BASE_URL = "http://localhost:8080/api";
+
+    // Gson configurado para reutilizar
+    private final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class,
+                    (com.google.gson.JsonDeserializer<LocalDate>) (json, t, ctx) ->
+                            LocalDate.parse(json.getAsString())
+            )
+            .setObjectToNumberStrategy(ToNumberPolicy.LAZILY_PARSED_NUMBER)
+            .create();
+
+    /**
+     * Realiza el login del usuario
+     *
+     * @param email      Email del usuario
+     * @param contrasena Contraseña del usuario
+     * @return ApiResponse con el usuario si las credenciales son correctas
+     * @throws Exception Si hay algún error en la comunicación
+     */
+    public ApiResponse<?> login(String email, String contrasena) throws Exception {
+        // Crear el objeto LoginRequest
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail(email);
+        loginRequest.setContrasena(contrasena);
+
+        // Convertir el objeto a JSON
+        String jsonBody = gson.toJson(loginRequest);
+
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/usuarios/login"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        // Parsear la respuesta
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
     public ApiResponse<?> getUsuarioPorId(Long idusuario) throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI("http://localhost:8080/api/usuarios/obtener/" + idusuario))
+                    .uri(new URI(BASE_URL + "/usuarios/obtener/" + idusuario))
                     .header("Content-Type", "application/json")
                     .GET()
                     .build();
@@ -28,15 +75,6 @@ public class ClienteAPI {
                     HttpResponse.BodyHandlers.ofString()
             );
         }
-
-        // Gson capaz de parsear LocalDate
-        Gson gson = new GsonBuilder()
-                .registerTypeAdapter(LocalDate.class,
-                        (com.google.gson.JsonDeserializer<LocalDate>) (json, t, ctx) ->
-                                LocalDate.parse(json.getAsString())
-                )
-                .setObjectToNumberStrategy(ToNumberPolicy.LAZILY_PARSED_NUMBER)
-                .create();
 
         return gson.fromJson(response.body(), ApiResponse.class);
     }
