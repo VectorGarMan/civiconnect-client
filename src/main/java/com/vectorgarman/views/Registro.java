@@ -1,23 +1,22 @@
 package com.vectorgarman.views;
 
 import com.vectorgarman.api.ClienteAPI;
-import com.vectorgarman.dto.ApiResponse;
-import com.vectorgarman.dto.Colonia;
-import com.vectorgarman.dto.Estado;
-import com.vectorgarman.dto.Municipio;
+import com.vectorgarman.dto.*;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class Registro extends JDialog {
     private JPanel contentPane;
     private JTextField emailField;
     private JTextField nombreUsuarioField;
     private JPasswordField passwordField;
-    private JComboBox<String> comboTipoUsuario;
+    private JComboBox<TipoUsuario> comboTipoUsuario;
     private JComboBox<Estado> comboEstado;
     private JComboBox<Municipio> comboMunicipio;
     private JComboBox<Colonia> comboColonia;
@@ -30,6 +29,7 @@ public class Registro extends JDialog {
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
+        cargarTiposDeUsuario();
         cargarEstados();
 
         // Agregar listener para cerrar el programa al cerrar la ventana
@@ -268,40 +268,164 @@ public class Registro extends JDialog {
     }
 
     private void onRegistrar() {
+        // Obtener valores
         String email = emailField.getText().trim();
         String nombreUsuario = nombreUsuarioField.getText().trim();
         String password = new String(passwordField.getPassword());
-        String tipoUsuario = (String) comboTipoUsuario.getSelectedItem();
-        String estado = comboEstado.getSelectedItem().toString();
-        String municipio = (String) comboMunicipio.getSelectedItem();
-        String colonia = (String) comboColonia.getSelectedItem();
 
-        if (email.isEmpty() || nombreUsuario.isEmpty() || password.isEmpty()) {
+        // Validación de campos vacíos
+        if (email.isEmpty() ||
+                nombreUsuario.isEmpty() ||
+                password.isEmpty() ||
+                comboTipoUsuario.getSelectedIndex() == -1 ||
+                comboEstado.getSelectedIndex() == -1 ||
+                comboMunicipio.getSelectedIndex() == -1 ||
+                comboColonia.getSelectedIndex() == -1) {
+
             JOptionPane.showMessageDialog(this,
-                    "Por favor, completa todos los campos obligatorios",
-                    "Error",
+                    "Por favor, completa todos los campos antes de continuar.",
+                    "Campos Incompletos",
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // Aquí va tu lógica de registro con la API
-        JOptionPane.showMessageDialog(this,
-                "Datos capturados:\n" +
-                        "Email: " + email + "\n" +
-                        "Usuario: " + nombreUsuario + "\n" +
-                        "Tipo: " + tipoUsuario + "\n" +
-                        "Estado: " + estado + "\n" +
-                        "Municipio: " + municipio + "\n" +
-                        "Colonia: " + colonia,
-                "Registro",
-                JOptionPane.INFORMATION_MESSAGE);
+        // Deshabilitar botón mientras se procesa
+        btnRegistrar.setEnabled(false);
+        btnRegistrar.setText("Registrando...");
+
+        // Hilo separado para no bloquear la UI
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+
+                // Obtener las entidades seleccionadas desde los ComboBox
+                TipoUsuario tipoSeleccionado = (TipoUsuario) comboTipoUsuario.getSelectedItem();
+                Colonia coloniaSeleccionada = (Colonia) comboColonia.getSelectedItem();
+
+                // Extraer los IDs reales directamente del objeto seleccionado
+                Long idTipoUsuario = tipoSeleccionado != null ? tipoSeleccionado.getIdtipousuario().longValue() : null;
+                Long idColonia = coloniaSeleccionada != null ? coloniaSeleccionada.getIdcolonia().longValue() : null;
+
+
+                ApiResponse<?> response = api.crearUsuario(idTipoUsuario, idColonia, email, password, nombreUsuario);
+
+                SwingUtilities.invokeLater(() -> {
+                    btnRegistrar.setEnabled(true);
+                    btnRegistrar.setText("Registrar");
+
+                    Object statusObj = getFieldValue(response, "status");
+                    Object mensajeObj = getFieldValue(response, "mensaje");
+                    Object detallesObj = getFieldValue(response, "detalles");
+
+                    String status = statusObj != null ? statusObj.toString() : "";
+                    String mensaje = mensajeObj != null ? mensajeObj.toString() : "";
+                    String detalles = detallesObj != null ? detallesObj.toString() : "";
+
+                    switch (status) {
+                        case "OK":
+                            JOptionPane.showMessageDialog(this,
+                                    mensaje,
+                                    "Registro Exitoso",
+                                    JOptionPane.INFORMATION_MESSAGE);
+                            dispose(); // Cerrar ventana si ya no se usa
+                            break;
+
+                        case "WARNING":
+                            JOptionPane.showMessageDialog(this,
+                                    mensaje + (!detalles.isEmpty() ? "\n" + detalles : ""),
+                                    "Advertencia",
+                                    JOptionPane.WARNING_MESSAGE);
+                            break;
+
+                        default:
+                            JOptionPane.showMessageDialog(this,
+                                    mensaje + (!detalles.isEmpty() ? "\n" + detalles : ""),
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> {
+                    btnRegistrar.setEnabled(true);
+                    btnRegistrar.setText("Registrar");
+                    JOptionPane.showMessageDialog(this,
+                            "Error al conectar con el servidor:\n" + ex.getMessage(),
+                            "Error de Conexión",
+                            JOptionPane.ERROR_MESSAGE);
+                });
+            }
+        }).start();
     }
+
 
     private void onIniciarSesion() {
         // Cerrar ventana de registro y abrir login
         dispose();
         Login loginDialog = new Login();
         loginDialog.setVisible(true);
+    }
+
+    private void cargarTiposDeUsuario() {
+        // Ejecutar en un hilo separado para no bloquear la UI
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ApiResponse<?> response = api.obtenertiposDeUsuario();
+
+                // Volver al hilo de UI para actualizar el ComboBox
+                SwingUtilities.invokeLater(() -> {
+                    Object statusObj = getFieldValue(response, "status");
+                    String status = statusObj != null ? statusObj.toString() : "";
+
+                    if ("OK".equals(status)) {
+                        Object dataObj = getFieldValue(response, "data");
+
+                        if (dataObj instanceof List) {
+                            comboTipoUsuario.removeAllItems();
+
+                            List<?> tiposdeusuario = (List<?>) dataObj;
+                            for (Object item : tiposdeusuario) {
+                                if (item instanceof Map) {
+                                    Map<?, ?> tiposdeusuarioMap = (Map<?, ?>) item;
+
+                                    // Extraer los valores
+                                    Object idObj = tiposdeusuarioMap.get("idtipousuario");
+                                    Object descripcionObj = tiposdeusuarioMap.get("descripcion");
+                                    Object nombreObj = tiposdeusuarioMap.get("nombre");
+
+                                    if (idObj != null && nombreObj != null) {
+                                        Integer id = ((Number) idObj).intValue();
+                                        String descripcion = descripcionObj.toString();
+                                        String nombre = nombreObj.toString();
+
+                                        TipoUsuario tipoUsuario = new TipoUsuario(id, nombre, descripcion);
+                                        comboTipoUsuario.addItem(tipoUsuario);
+                                    }
+                                }
+                            }
+
+                            // Seleccionar el primer elemento si hay estados
+                            if (comboTipoUsuario.getItemCount() > 0) {
+                                comboTipoUsuario.setSelectedIndex(0);
+                            }
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                                "Error al cargar los tipos de usuarios",
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this,
+                            "Error al conectar con el servidor:\n" + ex.getMessage(),
+                            "Error de Conexión",
+                            JOptionPane.ERROR_MESSAGE);
+                });
+            }
+        }).start();
     }
 
     private void cargarEstados() {

@@ -185,8 +185,6 @@ public class Login extends JDialog {
                     btnLogin.setEnabled(true);
                     btnLogin.setText("Iniciar Sesión");
 
-                    // Usa los nombres correctos de tus getters
-                    // Cambia estos según tu clase ApiResponse
                     Object statusObj = getFieldValue(response, "status");
                     Object mensajeObj = getFieldValue(response, "mensaje");
                     Object detallesObj = getFieldValue(response, "detalles");

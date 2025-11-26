@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.vectorgarman.dto.ApiResponse;
 import com.vectorgarman.dto.LoginRequest;
+import com.vectorgarman.dto.UsuarioRequest;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -57,6 +58,55 @@ public class ClienteAPI {
         }
 
         // Parsear la respuesta
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    public ApiResponse<?> crearUsuario(Long idtipousuario, Long idcolonia, String email, String contrasena, String nombreusuario) throws Exception {
+        // Crear el objeto UsuarioRequest
+        UsuarioRequest usuarioRequest = new UsuarioRequest();
+        usuarioRequest.setIdtipousuario(idtipousuario);
+        usuarioRequest.setIdcolonia(idcolonia);
+        usuarioRequest.setEmail(email);
+        usuarioRequest.setContrasena(contrasena);
+        usuarioRequest.setNombreusuario(nombreusuario);
+
+        // Convertir el objeto a JSON
+        String jsonBody = gson.toJson(usuarioRequest);
+
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/usuarios/crear"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        // Parsear la respuesta
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    public ApiResponse<?> obtenertiposDeUsuario() throws Exception {
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/usuarios/tipoUsuario/obtener"))
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
