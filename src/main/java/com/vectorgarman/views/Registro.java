@@ -1,8 +1,16 @@
 package com.vectorgarman.views;
 
+import com.vectorgarman.api.ClienteAPI;
+import com.vectorgarman.dto.ApiResponse;
+import com.vectorgarman.dto.Colonia;
+import com.vectorgarman.dto.Estado;
+import com.vectorgarman.dto.Municipio;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.List;
+import java.util.Map;
 
 public class Registro extends JDialog {
     private JPanel contentPane;
@@ -10,17 +18,19 @@ public class Registro extends JDialog {
     private JTextField nombreUsuarioField;
     private JPasswordField passwordField;
     private JComboBox<String> comboTipoUsuario;
-    private JComboBox<String> comboEstado;
-    private JComboBox<String> comboMunicipio;
-    private JComboBox<String> comboColonia;
+    private JComboBox<Estado> comboEstado;
+    private JComboBox<Municipio> comboMunicipio;
+    private JComboBox<Colonia> comboColonia;
     private JButton btnRegistrar;
     private JButton btnIniciarSesion;
 
     public Registro() {
-        setTitle("CiviConnect");
+        setTitle("Registro de Usuario");
         setSize(500, 650);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+
+        cargarEstados();
 
         // Agregar listener para cerrar el programa al cerrar la ventana
         addWindowListener(new WindowAdapter() {
@@ -169,6 +179,18 @@ public class Registro extends JDialog {
         gbc.insets = new Insets(0, 5, 10, 10);
         contentPane.add(comboMunicipio, gbc);
 
+        comboEstado.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    Estado estadoSeleccionado = (Estado) comboEstado.getSelectedItem();
+                    if (estadoSeleccionado != null) {
+                        cargarMunicipios((long) estadoSeleccionado.getIdestado());
+                    }
+                }
+            }
+        });
+
         // Colonia
         JLabel lblColonia = new JLabel("Colonia:");
         lblColonia.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -188,6 +210,18 @@ public class Registro extends JDialog {
         contentPane.add(comboColonia, gbc);
 
         row += 8;
+
+        comboMunicipio.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    Municipio municipioSeleccionado = (Municipio) comboMunicipio.getSelectedItem();
+                    if (municipioSeleccionado != null) {
+                        cargarColonias((long) municipioSeleccionado.getIdmunicipio());
+                    }
+                }
+            }
+        });
 
         // Botón Registrar
         btnRegistrar = new JButton("Registrar Usuario");
@@ -238,7 +272,7 @@ public class Registro extends JDialog {
         String nombreUsuario = nombreUsuarioField.getText().trim();
         String password = new String(passwordField.getPassword());
         String tipoUsuario = (String) comboTipoUsuario.getSelectedItem();
-        String estado = (String) comboEstado.getSelectedItem();
+        String estado = comboEstado.getSelectedItem().toString();
         String municipio = (String) comboMunicipio.getSelectedItem();
         String colonia = (String) comboColonia.getSelectedItem();
 
@@ -268,6 +302,195 @@ public class Registro extends JDialog {
         dispose();
         Login loginDialog = new Login();
         loginDialog.setVisible(true);
+    }
+
+    private void cargarEstados() {
+        // Ejecutar en un hilo separado para no bloquear la UI
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ApiResponse<?> response = api.obtenerEstados();
+
+                // Volver al hilo de UI para actualizar el ComboBox
+                SwingUtilities.invokeLater(() -> {
+                    Object statusObj = getFieldValue(response, "status");
+                    String status = statusObj != null ? statusObj.toString() : "";
+
+                    if ("OK".equals(status)) {
+                        Object dataObj = getFieldValue(response, "data");
+
+                        if (dataObj instanceof List) {
+                            comboEstado.removeAllItems();
+
+                            List<?> estados = (List<?>) dataObj;
+                            for (Object item : estados) {
+                                if (item instanceof Map) {
+                                    Map<?, ?> estadoMap = (Map<?, ?>) item;
+
+                                    // Extraer los valores
+                                    Object idObj = estadoMap.get("idestado");
+                                    Object codigoObj = estadoMap.get("codigo");
+                                    Object nombreObj = estadoMap.get("nombre");
+
+                                    if (idObj != null && nombreObj != null) {
+                                        Integer id = ((Number) idObj).intValue();
+                                        String codigo = codigoObj != null ? codigoObj.toString() : "";
+                                        String nombre = nombreObj.toString();
+
+                                        Estado estado = new Estado(id, codigo, nombre);
+                                        comboEstado.addItem(estado);
+                                    }
+                                }
+                            }
+
+                            // Seleccionar el primer elemento si hay estados
+                            if (comboEstado.getItemCount() > 0) {
+                                comboEstado.setSelectedIndex(0);
+                            }
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                                "Error al cargar los estados",
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this,
+                            "Error al conectar con el servidor:\n" + ex.getMessage(),
+                            "Error de Conexión",
+                            JOptionPane.ERROR_MESSAGE);
+                });
+            }
+        }).start();
+    }
+
+    private void cargarMunicipios(Long idestado) {
+        // Ejecutar en un hilo separado para no bloquear la UI
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ApiResponse<?> response = api.obtenerMunicipios(idestado);
+
+                SwingUtilities.invokeLater(() -> {
+                    Object statusObj = getFieldValue(response, "status");
+                    String status = statusObj != null ? statusObj.toString() : "";
+
+                    if ("OK".equals(status)) {
+                        Object dataObj = getFieldValue(response, "data");
+
+
+                        if (dataObj instanceof List) {
+                            List<?> municipios = (List<?>) dataObj;
+
+                            comboMunicipio.removeAllItems(); // ← CORRECTO: limpiar municipios
+
+                            for (Object item : municipios) {
+                                if (item instanceof Map) {
+                                    Map<?, ?> municipioMap = (Map<?, ?>) item;
+
+                                    Object idObj = municipioMap.get("idmunicipio");
+                                    Object nombreObj = municipioMap.get("nombre");
+
+                                    if (idObj != null && nombreObj != null) {
+                                        Integer id = ((Number) idObj).intValue();
+                                        String nombre = nombreObj.toString();
+
+                                        Municipio municipio = new Municipio(id, nombre);
+                                        comboMunicipio.addItem(municipio);
+                                    }
+                                }
+                            }
+
+                            if (comboMunicipio.getItemCount() > 0) {
+                                comboMunicipio.setSelectedIndex(0);
+                            }
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                                "Error al cargar los municipios",
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                        "Error al conectar con el servidor:\n" + ex.getMessage(),
+                        "Error de Conexión",
+                        JOptionPane.ERROR_MESSAGE));
+            }
+        }).start();
+    }
+
+    private void cargarColonias(Long idmunicipio) {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ApiResponse<?> response = api.obtenerColonia(idmunicipio);
+
+                SwingUtilities.invokeLater(() -> {
+                    Object statusObj = getFieldValue(response, "status");
+                    String status = statusObj != null ? statusObj.toString() : "";
+
+                    comboColonia.removeAllItems(); // Limpia colonias
+
+                    if ("OK".equals(status)) {
+                        Object dataObj = getFieldValue(response, "data");
+
+                        if (dataObj instanceof List) {
+                            List<?> colonias = (List<?>) dataObj;
+
+                            for (Object item : colonias) {
+                                if (item instanceof Map) {
+                                    Map<?, ?> coloniaMap = (Map<?, ?>) item;
+
+                                    Object idObj = coloniaMap.get("idcolonia");
+                                    Object nombreObj = coloniaMap.get("nombre");
+
+                                    if (idObj != null && nombreObj != null) {
+                                        Integer id = ((Number) idObj).intValue();
+                                        String nombre = nombreObj.toString();
+
+                                        Colonia colonia = new Colonia(id, nombre);
+                                        comboColonia.addItem(colonia);
+                                    }
+                                }
+                            }
+
+                            if (comboColonia.getItemCount() > 0) {
+                                comboColonia.setSelectedIndex(0);
+                            }
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                                "Error al cargar las colonias.",
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                        "Error al conectar con el servidor:\n" + ex.getMessage(),
+                        "Error de Conexión",
+                        JOptionPane.ERROR_MESSAGE));
+            }
+        }).start();
+    }
+
+
+
+    // Método auxiliar para obtener valores de campos usando reflexión
+    private Object getFieldValue(Object obj, String fieldName) {
+        try {
+            java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(obj);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public static void main(String[] args) {
