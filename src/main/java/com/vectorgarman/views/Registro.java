@@ -366,7 +366,7 @@ public class Registro extends JDialog {
         new Thread(() -> {
             try {
                 ClienteAPI api = new ClienteAPI();
-                ApiResponse<?> response = api.obtenertiposDeUsuario();
+                ApiResponse<?> response = api.obtenerTiposDeUsuario();
 
                 // Volver al hilo de UI para actualizar el ComboBox
                 SwingUtilities.invokeLater(() -> {
@@ -467,7 +467,7 @@ public class Registro extends JDialog {
                         }
                     } else {
                         JOptionPane.showMessageDialog(this,
-                                "Error al cargar los estados",
+                                "No hay estados registrados",
                                 "Error",
                                 JOptionPane.ERROR_MESSAGE);
                     }
@@ -524,7 +524,7 @@ public class Registro extends JDialog {
                         }
                     } else {
                         JOptionPane.showMessageDialog(this,
-                                "Error al cargar los municipios",
+                                "No hay municipios registrados",
                                 "Error",
                                 JOptionPane.ERROR_MESSAGE);
                     }
@@ -578,7 +578,7 @@ public class Registro extends JDialog {
                         }
                     } else {
                         JOptionPane.showMessageDialog(this,
-                                "Error al cargar las colonias.",
+                                "No hay colonias registradas.",
                                 "Error",
                                 JOptionPane.ERROR_MESSAGE);
                     }

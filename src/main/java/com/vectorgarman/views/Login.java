@@ -19,8 +19,8 @@ public class Login extends JDialog {
         setTitle("CiviConnect");
         setSize(500, 450);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         // Agregar listener para cerrar el programa al cerrar la ventana
         addWindowListener(new WindowAdapter() {
             @Override
@@ -130,7 +130,7 @@ public class Login extends JDialog {
         panelBotones.add(btnRegistrar);
 
         // Botón Recuperar Contraseña
-        btnRecuperar = new JButton("<html><center>Recuperar<br>Contraseña</center></html>");
+        btnRecuperar = new JButton("<html><center>Olvidé mi<br>contraseña</center></html>");
         btnRecuperar.setFont(new Font("Arial", Font.PLAIN, 14));
         btnRecuperar.setBackground(new Color(220, 20, 60));
         btnRecuperar.setForeground(Color.BLACK);
@@ -189,13 +189,15 @@ public class Login extends JDialog {
                     String mensaje = response.getMensaje();
                     String detalles = response.getError() != null ? response.getError() : "";
 
-                    // TODO: validar los STATUS de acuerdo a los RESPONSE de la API
                     if ("OK".equals(status)) {
                         JOptionPane.showMessageDialog(this,
                                 mensaje,
                                 "Éxito",
                                 JOptionPane.INFORMATION_MESSAGE);
+
+                        // TODO: Redireccionar a la pantalla de index
                         dispose();
+
                     } else {
                         String message = mensaje + (detalles == null ? "" : "\n" + detalles);
                         if ("WARNING".equals(status)) {
@@ -237,18 +239,9 @@ public class Login extends JDialog {
     }
 
     private void onRecuperar() {
-        // Aquí va tu lógica de recuperación de contraseña
-        String email = JOptionPane.showInputDialog(this,
-                "Ingresa tu email para recuperar la contraseña:",
-                "Recuperar Contraseña",
-                JOptionPane.QUESTION_MESSAGE);
-
-        if (email != null && !email.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "Se ha enviado un correo a: " + email,
-                    "Recuperación",
-                    JOptionPane.INFORMATION_MESSAGE);
-        }
+        dispose();
+        CambiarContrasena dialog = new CambiarContrasena();
+        dialog.setVisible(true);
     }
 
     public static void main(String[] args) {

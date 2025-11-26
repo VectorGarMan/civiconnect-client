@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.vectorgarman.dto.ApiResponse;
+import com.vectorgarman.dto.CambioContrasenaRequest;
 import com.vectorgarman.dto.LoginRequest;
 import com.vectorgarman.dto.UsuarioRequest;
 
@@ -91,7 +92,7 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
-    public ApiResponse<?> obtenertiposDeUsuario() throws Exception {
+    public ApiResponse<?> obtenerTiposDeUsuario() throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
 
@@ -126,6 +127,53 @@ public class ClienteAPI {
             );
         }
 
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    public ApiResponse<?> olvideContrasena(String email) throws Exception {
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/usuarios/recuperarContrasena?email=" + email))
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        // Parsear la respuesta
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    public ApiResponse<?> cambiarContrasena(String token, String nuevaContrasena, String email) throws Exception {
+        // Crear el objeto UsuarioRequest
+        CambioContrasenaRequest cambioContrasenaRequest = new CambioContrasenaRequest();
+        cambioContrasenaRequest.setToken(token);
+        cambioContrasenaRequest.setNuevaContrasena(nuevaContrasena);
+        cambioContrasenaRequest.setEmail(email);
+
+        // Convertir el objeto a JSON
+        String jsonBody = gson.toJson(cambioContrasenaRequest);
+
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/usuarios/cambiarContrasena"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        // Parsear la respuesta
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
