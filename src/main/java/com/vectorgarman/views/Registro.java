@@ -241,7 +241,7 @@ public class Registro extends JDialog {
 
         // Botón Iniciar Sesión
         btnIniciarSesion = new JButton("Iniciar Sesión");
-        btnIniciarSesion.setFont(new Font("Arial", Font.PLAIN, 12));
+        btnIniciarSesion.setFont(new Font("Arial", Font.PLAIN, 14));
         btnIniciarSesion.setBackground(new Color(70, 130, 180));
         btnIniciarSesion.setForeground(Color.BLACK);
         btnIniciarSesion.setPreferredSize(new Dimension(420, 35));
@@ -294,8 +294,6 @@ public class Registro extends JDialog {
         // Hilo separado para no bloquear la UI
         new Thread(() -> {
             try {
-                ClienteAPI api = new ClienteAPI();
-
                 // Obtener las entidades seleccionadas desde los ComboBox
                 TipoUsuario tipoSeleccionado = (TipoUsuario) comboTipoUsuario.getSelectedItem();
                 Colonia coloniaSeleccionada = (Colonia) comboColonia.getSelectedItem();
@@ -304,41 +302,39 @@ public class Registro extends JDialog {
                 Long idTipoUsuario = tipoSeleccionado != null ? tipoSeleccionado.getIdtipousuario().longValue() : null;
                 Long idColonia = coloniaSeleccionada != null ? coloniaSeleccionada.getIdcolonia().longValue() : null;
 
-
+                ClienteAPI api = new ClienteAPI();
                 ApiResponse<?> response = api.crearUsuario(idTipoUsuario, idColonia, email, password, nombreUsuario);
 
                 SwingUtilities.invokeLater(() -> {
                     btnRegistrar.setEnabled(true);
                     btnRegistrar.setText("Registrar");
 
-                    Object statusObj = getFieldValue(response, "status");
-                    Object mensajeObj = getFieldValue(response, "mensaje");
-                    Object detallesObj = getFieldValue(response, "detalles");
+                    String status = response.getStatus();
+                    String mensaje = response.getMensaje();
+                    String detalles = response.getError() != null ? response.getError() : "";
 
-                    String status = statusObj != null ? statusObj.toString() : "";
-                    String mensaje = mensajeObj != null ? mensajeObj.toString() : "";
-                    String detalles = detallesObj != null ? detallesObj.toString() : "";
-
-                    // TODO: validar los STATUS de acuerdo a los RESPONSE de la API
+                    String message = mensaje + (detalles == null ? "" : "\n" + detalles);
                     switch (status) {
                         case "OK":
                             JOptionPane.showMessageDialog(this,
-                                    mensaje,
+                                    message,
                                     "Registro Exitoso",
                                     JOptionPane.INFORMATION_MESSAGE);
-                            dispose(); // Cerrar ventana si ya no se usa
+                            dispose();
+                            Login loginDialog = new Login();
+                            loginDialog.setVisible(true);
                             break;
 
                         case "WARNING":
                             JOptionPane.showMessageDialog(this,
-                                    mensaje + (!detalles.isEmpty() ? "\n" + detalles : ""),
+                                    message,
                                     "Advertencia",
                                     JOptionPane.WARNING_MESSAGE);
                             break;
 
                         default:
                             JOptionPane.showMessageDialog(this,
-                                    mensaje + (!detalles.isEmpty() ? "\n" + detalles : ""),
+                                    message,
                                     "Error",
                                     JOptionPane.ERROR_MESSAGE);
                     }
@@ -374,8 +370,10 @@ public class Registro extends JDialog {
 
                 // Volver al hilo de UI para actualizar el ComboBox
                 SwingUtilities.invokeLater(() -> {
-                    Object statusObj = getFieldValue(response, "status");
-                    String status = statusObj != null ? statusObj.toString() : "";
+
+                    String status = response.getStatus();
+                    String mensaje = response.getMensaje();
+                    String detalles = response.getError() != null ? response.getError() : "";
 
                     if ("OK".equals(status)) {
                         Object dataObj = getFieldValue(response, "data");
@@ -407,9 +405,9 @@ public class Registro extends JDialog {
                                 comboTipoUsuario.setSelectedIndex(0);
                             }
                         }
-                    } else {
+                    } else if ("ERROR".equals(status)) {
                         JOptionPane.showMessageDialog(this,
-                                "Error al cargar los tipos de usuarios",
+                                mensaje,
                                 "Error",
                                 JOptionPane.ERROR_MESSAGE);
                     }

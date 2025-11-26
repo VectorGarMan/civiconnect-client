@@ -117,7 +117,7 @@ public class Login extends JDialog {
 
         // Botón Registrar Usuario
         btnRegistrar = new JButton("Registrar Usuario");
-        btnRegistrar.setFont(new Font("Arial", Font.PLAIN, 12));
+        btnRegistrar.setFont(new Font("Arial", Font.PLAIN, 14));
         btnRegistrar.setBackground(new Color(60, 179, 113));
         btnRegistrar.setForeground(Color.BLACK);
         btnRegistrar.setPreferredSize(new Dimension(145, 35));
@@ -131,7 +131,7 @@ public class Login extends JDialog {
 
         // Botón Recuperar Contraseña
         btnRecuperar = new JButton("<html><center>Recuperar<br>Contraseña</center></html>");
-        btnRecuperar.setFont(new Font("Arial", Font.PLAIN, 11));
+        btnRecuperar.setFont(new Font("Arial", Font.PLAIN, 14));
         btnRecuperar.setBackground(new Color(220, 20, 60));
         btnRecuperar.setForeground(Color.BLACK);
         btnRecuperar.setPreferredSize(new Dimension(145, 35));
@@ -185,13 +185,9 @@ public class Login extends JDialog {
                     btnLogin.setEnabled(true);
                     btnLogin.setText("Iniciar Sesión");
 
-                    Object statusObj = getFieldValue(response, "status");
-                    Object mensajeObj = getFieldValue(response, "mensaje");
-                    Object detallesObj = getFieldValue(response, "detalles");
-
-                    String status = statusObj != null ? statusObj.toString() : "";
-                    String mensaje = mensajeObj != null ? mensajeObj.toString() : "";
-                    String detalles = detallesObj != null ? detallesObj.toString() : "";
+                    String status = response.getStatus();
+                    String mensaje = response.getMensaje();
+                    String detalles = response.getError() != null ? response.getError() : "";
 
                     // TODO: validar los STATUS de acuerdo a los RESPONSE de la API
                     if ("OK".equals(status)) {
@@ -200,17 +196,24 @@ public class Login extends JDialog {
                                 "Éxito",
                                 JOptionPane.INFORMATION_MESSAGE);
                         dispose();
-                        // Aquí puedes abrir la ventana principal de tu aplicación
-                    } else if ("WARNING".equals(status)) {
-                        JOptionPane.showMessageDialog(this,
-                                mensaje + (detalles.isEmpty() ? "" : "\n" + detalles),
-                                "Advertencia",
-                                JOptionPane.WARNING_MESSAGE);
                     } else {
-                        JOptionPane.showMessageDialog(this,
-                                mensaje + (detalles.isEmpty() ? "" : "\n" + detalles),
-                                "Error",
-                                JOptionPane.ERROR_MESSAGE);
+                        String message = mensaje + (detalles == null ? "" : "\n" + detalles);
+                        if ("WARNING".equals(status)) {
+                            JOptionPane.showMessageDialog(this,
+                                    message,
+                                    "Advertencia",
+                                    JOptionPane.WARNING_MESSAGE);
+                        } else if ("ERROR".equals(status)) {
+                            JOptionPane.showMessageDialog(this,
+                                    message,
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE);
+                        } else {
+                            JOptionPane.showMessageDialog(this,
+                                    "Respuesta desconocida desde el servidor.",
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE);
+                        }
                     }
                 });
             } catch (Exception ex) {
@@ -224,16 +227,6 @@ public class Login extends JDialog {
                 });
             }
         }).start();
-    }
-
-    private Object getFieldValue(Object obj, String fieldName) {
-        try {
-            java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            return field.get(obj);
-        } catch (Exception e) {
-            return null;
-        }
     }
 
     private void onRegistrar() {
