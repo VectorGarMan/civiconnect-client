@@ -6,11 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="1f6023ce-b786-41f8-a506-a31e3b556676" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/api/ClienteAPI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/api/ClienteAPI.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/dto/Usuario.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/dto/Usuario.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Login2.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Login.form" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Login2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Login.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
