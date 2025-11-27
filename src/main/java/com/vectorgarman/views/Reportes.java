@@ -8,6 +8,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +23,9 @@ public class Reportes extends JFrame {
     private JButton btnPerfil;
 
     private JPanel panelListaReportes;
+
+    private List<Map<?, ?>> todosLosReportes = new ArrayList<>();
+    private List<Map<?, ?>> reportesFiltrados = new ArrayList<>();
 
     public Reportes(Usuario usuario) {
         this.usuarioLogueado = usuario;
@@ -85,6 +89,8 @@ public class Reportes extends JFrame {
                     if (estadoSeleccionado != null) {
                         cargarMunicipios((long) estadoSeleccionado.getIdestado());
                     }
+                    // Aplicar filtros cuando cambia el estado
+                    aplicarFiltrosYMostrar();
                 }
             }
         });
@@ -97,6 +103,18 @@ public class Reportes extends JFrame {
                     if (municipioSeleccionado != null) {
                         cargarColonias((long) municipioSeleccionado.getIdmunicipio());
                     }
+                    // Aplicar filtros cuando cambia el municipio
+                    aplicarFiltrosYMostrar();
+                }
+            }
+        });
+
+        comboColonia.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    // Aplicar filtros cuando cambia la colonia
+                    aplicarFiltrosYMostrar();
                 }
             }
         });
@@ -110,12 +128,32 @@ public class Reportes extends JFrame {
         btnPerfil = new JButton("Mi perfil");
         btnPerfil.setPreferredSize(new Dimension(70, 35));
 
+        // Botón para limpiar filtros
+        JButton btnLimpiarFiltros = new JButton("Limpiar");
+        btnLimpiarFiltros.setPreferredSize(new Dimension(70, 35));
+        btnLimpiarFiltros.addActionListener(e -> limpiarFiltros());
+
         botonesPanel.add(btnCrearReporte);
         botonesPanel.add(btnPerfil);
+        botonesPanel.add(btnLimpiarFiltros);
+
 
         header.add(botonesPanel, BorderLayout.EAST);
 
         add(header, BorderLayout.NORTH);
+    }
+
+    private void limpiarFiltros() {
+        // Restablecer a la ubicación del usuario
+        Ubicacion ubicacion = SessionManager.getInstance().getUbicacionUsuario();
+        if (ubicacion != null) {
+            seleccionarEstadoPorId(ubicacion.getIdEstado());
+            seleccionarMunicipioPorId(ubicacion.getIdMunicipio());
+            seleccionarColoniaPorId(ubicacion.getIdColonia());
+        } else {
+            comboEstado.setSelectedIndex(0);
+        }
+        aplicarFiltrosYMostrar();
     }
 
     /** LISTA DE REPORTES **/
@@ -133,7 +171,6 @@ public class Reportes extends JFrame {
         add(scroll, BorderLayout.CENTER);
     }
 
-//     TODO: DESCUBRIR POR QUÉ NO SE ESTÁN SELECCIONANDO LOS COMBOBOX CON LOS DATOS DEL USUARIO DE LA SESION ACTIVA.
     private void cargarEstadosYUbicacion() {
         new Thread(() -> {
             try {
@@ -146,10 +183,8 @@ public class Reportes extends JFrame {
                 Ubicacion ubicacion = null;
                 if (usuarioLogueado != null && usuarioLogueado.getIdusuario() != null) {
                     ApiResponse<?> responseUbicacion = api.obtenerUbicacionPorIdUsuario(usuarioLogueado.getIdusuario());
-                    System.out.println("Respuesta ubicación: " + responseUbicacion.toString());
                     if ("OK".equals(responseUbicacion.getStatus()) && responseUbicacion.getData() instanceof Map<?, ?> ubicacionMap) {
                         ubicacion = mapearUbicacion(ubicacionMap);
-                        System.out.println(ubicacion);
 
                         // Guardar en SessionManager
                         SessionManager.getInstance().setUbicacionUsuario(ubicacion);
@@ -208,104 +243,6 @@ public class Reportes extends JFrame {
         }).start();
     }
 
-//    private void cargarEstadosYUbicacion() {
-//        new Thread(() -> {
-//            try {
-//                ClienteAPI api = new ClienteAPI();
-//
-//                // Cargar estados primero
-//                System.out.println("Cargando estados...");
-//                ApiResponse<?> responseEstados = api.obtenerEstados();
-//                System.out.println("Estados cargados: " + responseEstados.getStatus());
-//
-//                // Cargar ubicación del usuario
-//                Ubicacion ubicacion = null;
-//                if (usuarioLogueado != null && usuarioLogueado.getIdusuario() != null) {
-//                    System.out.println("Cargando ubicación para usuario: " + usuarioLogueado.getIdusuario());
-//                    ApiResponse<?> responseUbicacion = api.obtenerUbicacionPorIdUsuario(usuarioLogueado.getIdusuario());
-//                    System.out.println("Respuesta ubicación: " + responseUbicacion.toString());
-//
-//                    if ("OK".equals(responseUbicacion.getStatus()) && responseUbicacion.getData() instanceof Map<?, ?> ubicacionMap) {
-//                        ubicacion = mapearUbicacion(ubicacionMap);
-//                        System.out.println("Ubicación mapeada: " + ubicacion);
-//                        System.out.println("ID Estado: " + ubicacion.getIdEstado());
-//                        System.out.println("ID Municipio: " + ubicacion.getIdMunicipio());
-//                        System.out.println("ID Colonia: " + ubicacion.getIdColonia());
-//
-//                        // Guardar en SessionManager
-//                        SessionManager.getInstance().setUbicacionUsuario(ubicacion);
-//                        System.out.println("Ubicación guardada en SessionManager");
-//                    } else {
-//                        System.out.println("Error en respuesta de ubicación o datos vacíos");
-//                    }
-//                } else {
-//                    System.out.println("Usuario logueado es null o no tiene ID");
-//                }
-//
-//                final Ubicacion ubicacionFinal = ubicacion;
-//                System.out.println("Ubicación final a usar: " + ubicacionFinal);
-//
-//                SwingUtilities.invokeLater(() -> {
-//                    String status = responseEstados.getStatus() != null ? responseEstados.getStatus() : "";
-//                    Object data = responseEstados.getData();
-//
-//                    if ("OK".equals(status)) {
-//                        if (data instanceof List<?> listaEstados) {
-//                            comboEstado.removeAllItems();
-//                            System.out.println("Cargando " + listaEstados.size() + " estados en combo");
-//
-//                            for (Object item : listaEstados) {
-//                                if (item instanceof Map<?, ?> estadoMap) {
-//                                    Integer id = estadoMap.get("idestado") != null
-//                                            ? ((Number) estadoMap.get("idestado")).intValue()
-//                                            : null;
-//                                    String codigo = estadoMap.get("codigo") != null
-//                                            ? estadoMap.get("codigo").toString()
-//                                            : "";
-//                                    String nombre = estadoMap.get("nombre") != null
-//                                            ? estadoMap.get("nombre").toString()
-//                                            : "";
-//
-//                                    if (id != null && !nombre.isEmpty()) {
-//                                        Estado estado = new Estado(id, codigo, nombre);
-//                                        comboEstado.addItem(estado);
-//                                    }
-//                                }
-//                            }
-//
-//                            System.out.println("Estados cargados en combo: " + comboEstado.getItemCount());
-//
-//                            // Seleccionar el estado del usuario si está disponible
-//                            if (ubicacionFinal != null) {
-//                                System.out.println("Intentando seleccionar estado ID: " + ubicacionFinal.getIdEstado());
-//                                seleccionarEstadoPorId(ubicacionFinal.getIdEstado());
-//                            } else {
-//                                System.out.println("Ubicación final es null, seleccionando primer estado");
-//                                if (comboEstado.getItemCount() > 0) {
-//                                    comboEstado.setSelectedIndex(0);
-//                                }
-//                            }
-//                        }
-//                    } else {
-//                        System.out.println("Error cargando estados: " + status);
-//                    }
-//                });
-//
-//            } catch (Exception ex) {
-//                System.out.println("Excepción en cargarEstadosYUbicacion: " + ex.getMessage());
-//                ex.printStackTrace();
-//                SwingUtilities.invokeLater(() -> {
-//                    JOptionPane.showMessageDialog(this,
-//                            "Error al conectar con el servidor:\n" + ex.getMessage(),
-//                            "Error de Conexión",
-//                            JOptionPane.ERROR_MESSAGE);
-//                    // Si hay error, cargar estados normalmente
-//                    cargarEstados();
-//                });
-//            }
-//        }).start();
-//    }
-
     private void seleccionarEstadoPorId(Long idEstado) {
         for (int i = 0; i < comboEstado.getItemCount(); i++) {
             Estado estado = comboEstado.getItemAt(i);
@@ -315,20 +252,6 @@ public class Reportes extends JFrame {
             }
         }
     }
-
-//    private void seleccionarEstadoPorId(Long idEstado) {
-//        System.out.println("Buscando estado con ID: " + idEstado);
-//        for (int i = 0; i < comboEstado.getItemCount(); i++) {
-//            Estado estado = comboEstado.getItemAt(i);
-//            System.out.println("Estado en combo [" + i + "]: ID=" + estado.getIdestado() + ", Nombre=" + estado.getNombre());
-//            if (estado.getIdestado() == idEstado.intValue()) {
-//                System.out.println("¡Estado encontrado! Seleccionando índice: " + i);
-//                comboEstado.setSelectedIndex(i);
-//                return;
-//            }
-//        }
-//        System.out.println("Estado con ID " + idEstado + " no encontrado en el combo");
-//    }
 
     private void seleccionarMunicipioPorId(Long idMunicipio) {
         for (int i = 0; i < comboMunicipio.getItemCount(); i++) {
@@ -535,6 +458,7 @@ public class Reportes extends JFrame {
         }
     }
 
+    // TODO: Falta que se filtren los reportes por la ubicacion que este puesta en los combobox
     private void cargarReportes() {
         new Thread(() -> {
             try {
@@ -548,18 +472,18 @@ public class Reportes extends JFrame {
                         Object dataObj = response.getData();
 
                         if (dataObj instanceof List<?> reportes) {
-                            panelListaReportes.removeAll();
-
+                            // Guardar todos los reportes
+                            todosLosReportes.clear();
                             for (Object item : reportes) {
                                 if (item instanceof Map<?, ?> reporteMap) {
-                                    JPanel tarjeta = crearTarjetaReporte(reporteMap);
-                                    panelListaReportes.add(tarjeta);
-                                    panelListaReportes.add(Box.createRigidArea(new Dimension(0, 15)));
+                                    todosLosReportes.add(reporteMap);
                                 }
                             }
 
-                            panelListaReportes.revalidate();
-                            panelListaReportes.repaint();
+                            System.out.println("Total reportes cargados: " + todosLosReportes.size());
+
+                            // Aplicar filtro inicial con la ubicación del usuario
+                            aplicarFiltrosYMostrar();
                         }
                     } else {
                         JOptionPane.showMessageDialog(this,
@@ -575,6 +499,111 @@ public class Reportes extends JFrame {
                         JOptionPane.ERROR_MESSAGE));
             }
         }).start();
+    }
+
+    private void aplicarFiltrosYMostrar() {
+        // Obtener los valores seleccionados en los combobox
+        Estado estadoSeleccionado = (Estado) comboEstado.getSelectedItem();
+        Municipio municipioSeleccionado = (Municipio) comboMunicipio.getSelectedItem();
+        Colonia coloniaSeleccionado = (Colonia) comboColonia.getSelectedItem();
+
+        // Filtrar los reportes
+        reportesFiltrados = filtrarReportes(estadoSeleccionado, municipioSeleccionado, coloniaSeleccionado);
+
+        // Mostrar los reportes filtrados
+        mostrarReportesFiltrados();
+    }
+
+    private List<Map<?, ?>> filtrarReportes(Estado estado, Municipio municipio, Colonia colonia) {
+        List<Map<?, ?>> resultado = new ArrayList<>();
+
+        for (Map<?, ?> reporteMap : todosLosReportes) {
+            if (cumpleFiltros(reporteMap, estado, municipio, colonia)) {
+                resultado.add(reporteMap);
+            }
+        }
+
+        System.out.println("Reportes después de filtrar: " + resultado.size());
+        return resultado;
+    }
+
+    private boolean cumpleFiltros(Map<?, ?> reporteMap, Estado estado, Municipio municipio, Colonia colonia) {
+        Map<?, ?> reporteView = reporteMap.get("reporteView") instanceof Map ? (Map<?, ?>) reporteMap.get("reporteView") : null;
+        if (reporteView == null) return false;
+
+        // Si no hay filtros seleccionados, mostrar todos los reportes
+        if (estado == null && municipio == null && colonia == null) {
+            return true;
+        }
+
+        // Obtener nombres de ubicación del reporte
+        String nombreEstadoReporte = obtenerStringDesdeMap(reporteView, "estado");
+        String nombreMunicipioReporte = obtenerStringDesdeMap(reporteView, "municipio");
+        String nombreColoniaReporte = obtenerStringDesdeMap(reporteView, "colonia");
+
+        // Si el reporte no tiene datos de ubicación y hay filtros activos, no mostrarlo
+        if ((estado != null && nombreEstadoReporte == null) ||
+                (municipio != null && nombreMunicipioReporte == null) ||
+                (colonia != null && nombreColoniaReporte == null)) {
+            return false;
+        }
+
+        // Aplicar filtros jerárquicamente por NOMBRE
+        boolean cumpleEstado = (estado == null) ||
+                (nombreEstadoReporte != null && nombreEstadoReporte.equalsIgnoreCase(estado.getNombre()));
+
+        boolean cumpleMunicipio = (municipio == null) ||
+                (nombreMunicipioReporte != null && nombreMunicipioReporte.equalsIgnoreCase(municipio.getNombre()));
+
+        boolean cumpleColonia = (colonia == null) ||
+                (nombreColoniaReporte != null && nombreColoniaReporte.equalsIgnoreCase(colonia.getNombre()));
+
+        return cumpleEstado && cumpleMunicipio && cumpleColonia;
+    }
+
+    private String obtenerStringDesdeMap(Map<?, ?> map, String key) {
+        Object value = map.get(key);
+        return value != null ? value.toString().trim() : null;
+    }
+
+//    private boolean cumpleFiltros(Map<?, ?> reporteMap, Estado estado, Municipio municipio, Colonia colonia) {
+//        // Extraer la ubicación del reporte
+//        Map<?, ?> reporteView = reporteMap.get("reporteView") instanceof Map ? (Map<?, ?>) reporteMap.get("reporteView") : null;
+//        if (reporteView == null) return false;
+//
+//        // Obtener IDs de ubicación del reporte
+//        Long idEstadoReporte = reporteView.get("idestado") != null ? ((Number) reporteView.get("idestado")).longValue() : null;
+//        Long idMunicipioReporte = reporteView.get("idmunicipio") != null ? ((Number) reporteView.get("idmunicipio")).longValue() : null;
+//        Long idColoniaReporte = reporteView.get("idcolonia") != null ? ((Number) reporteView.get("idcolonia")).longValue() : null;
+//
+//        // Aplicar filtros jerárquicamente
+//        boolean cumpleEstado = (estado == null) || (idEstadoReporte != null && idEstadoReporte.equals((long) estado.getIdestado()));
+//        boolean cumpleMunicipio = (municipio == null) || (idMunicipioReporte != null && idMunicipioReporte.equals((long) municipio.getIdmunicipio()));
+//        boolean cumpleColonia = (colonia == null) || (idColoniaReporte != null && idColoniaReporte.equals((long) colonia.getIdcolonia()));
+//
+//        return cumpleEstado && cumpleMunicipio && cumpleColonia;
+//    }
+
+    private void mostrarReportesFiltrados() {
+        panelListaReportes.removeAll();
+
+        if (reportesFiltrados.isEmpty()) {
+            // Mostrar mensaje cuando no hay reportes
+            JLabel lblSinReportes = new JLabel("No hay reportes que coincidan con los filtros seleccionados");
+            lblSinReportes.setFont(new Font("Arial", Font.ITALIC, 14));
+            lblSinReportes.setAlignmentX(Component.CENTER_ALIGNMENT);
+            panelListaReportes.add(lblSinReportes);
+        } else {
+            // Mostrar reportes filtrados
+            for (Map<?, ?> reporteMap : reportesFiltrados) {
+                JPanel tarjeta = crearTarjetaReporte(reporteMap);
+                panelListaReportes.add(tarjeta);
+                panelListaReportes.add(Box.createRigidArea(new Dimension(0, 15)));
+            }
+        }
+
+        panelListaReportes.revalidate();
+        panelListaReportes.repaint();
     }
 
     private JPanel crearTarjetaReporte(Map<?, ?> reporteMap) {
