@@ -133,117 +133,30 @@ public class Reportes extends JFrame {
         add(scroll, BorderLayout.CENTER);
     }
 
-    // TODO: DESCUBRIR POR QUÉ NO SE ESTÁN SELECCIONANDO LOS COMBOBOX CON LOS DATOS DEL USUARIO DE LA SESION ACTIVA.
-//    private void cargarEstadosYUbicacion() {
-//        new Thread(() -> {
-//            try {
-//                ClienteAPI api = new ClienteAPI();
-//
-//                // Cargar estados primero
-//                ApiResponse<?> responseEstados = api.obtenerEstados();
-//
-//                // Cargar ubicación del usuario
-//                Ubicacion ubicacion = null;
-//                if (usuarioLogueado != null && usuarioLogueado.getIdusuario() != null) {
-//                    ApiResponse<?> responseUbicacion = api.obtenerUbicacionPorIdUsuario(usuarioLogueado.getIdusuario());
-//                    System.out.println(responseUbicacion.toString());
-//                    if ("OK".equals(responseUbicacion.getStatus()) && responseUbicacion.getData() instanceof Map<?, ?> ubicacionMap) {
-//                        ubicacion = mapearUbicacion(ubicacionMap);
-//                        System.out.println(ubicacion);
-//
-//                        // Guardar en SessionManager
-//                        SessionManager.getInstance().setUbicacionUsuario(ubicacion);
-//                    }
-//                }
-//
-//                final Ubicacion ubicacionFinal = ubicacion;
-//
-//                SwingUtilities.invokeLater(() -> {
-//                    String status = responseEstados.getStatus() != null ? responseEstados.getStatus() : "";
-//                    Object data = responseEstados.getData();
-//
-//                    if ("OK".equals(status)) {
-//                        if (data instanceof List<?> listaEstados) {
-//                            comboEstado.removeAllItems();
-//
-//                            for (Object item : listaEstados) {
-//                                if (item instanceof Map<?, ?> estadoMap) {
-//                                    Integer id = estadoMap.get("idestado") != null
-//                                            ? ((Number) estadoMap.get("idestado")).intValue()
-//                                            : null;
-//                                    String codigo = estadoMap.get("codigo") != null
-//                                            ? estadoMap.get("codigo").toString()
-//                                            : "";
-//                                    String nombre = estadoMap.get("nombre") != null
-//                                            ? estadoMap.get("nombre").toString()
-//                                            : "";
-//
-//                                    if (id != null && !nombre.isEmpty()) {
-//                                        Estado estado = new Estado(id, codigo, nombre);
-//                                        comboEstado.addItem(estado);
-//                                    }
-//                                }
-//                            }
-//
-//                            // Seleccionar el estado del usuario si está disponible
-//                            if (ubicacionFinal != null) {
-//                                seleccionarEstadoPorId(ubicacionFinal.getIdEstado());
-//                            } else if (comboEstado.getItemCount() > 0) {
-//                                comboEstado.setSelectedIndex(0);
-//                            }
-//                        }
-//                    }
-//                });
-//
-//            } catch (Exception ex) {
-//                SwingUtilities.invokeLater(() -> {
-//                    JOptionPane.showMessageDialog(this,
-//                            "Error al conectar con el servidor:\n" + ex.getMessage(),
-//                            "Error de Conexión",
-//                            JOptionPane.ERROR_MESSAGE);
-//                    // Si hay error, cargar estados normalmente
-//                    cargarEstados();
-//                });
-//            }
-//        }).start();
-//    }
-
+//     TODO: DESCUBRIR POR QUÉ NO SE ESTÁN SELECCIONANDO LOS COMBOBOX CON LOS DATOS DEL USUARIO DE LA SESION ACTIVA.
     private void cargarEstadosYUbicacion() {
         new Thread(() -> {
             try {
                 ClienteAPI api = new ClienteAPI();
 
                 // Cargar estados primero
-                System.out.println("Cargando estados...");
                 ApiResponse<?> responseEstados = api.obtenerEstados();
-                System.out.println("Estados cargados: " + responseEstados.getStatus());
 
                 // Cargar ubicación del usuario
                 Ubicacion ubicacion = null;
                 if (usuarioLogueado != null && usuarioLogueado.getIdusuario() != null) {
-                    System.out.println("Cargando ubicación para usuario: " + usuarioLogueado.getIdusuario());
                     ApiResponse<?> responseUbicacion = api.obtenerUbicacionPorIdUsuario(usuarioLogueado.getIdusuario());
                     System.out.println("Respuesta ubicación: " + responseUbicacion.toString());
-
                     if ("OK".equals(responseUbicacion.getStatus()) && responseUbicacion.getData() instanceof Map<?, ?> ubicacionMap) {
                         ubicacion = mapearUbicacion(ubicacionMap);
-                        System.out.println("Ubicación mapeada: " + ubicacion);
-                        System.out.println("ID Estado: " + ubicacion.getIdEstado());
-                        System.out.println("ID Municipio: " + ubicacion.getIdMunicipio());
-                        System.out.println("ID Colonia: " + ubicacion.getIdColonia());
+                        System.out.println(ubicacion);
 
                         // Guardar en SessionManager
                         SessionManager.getInstance().setUbicacionUsuario(ubicacion);
-                        System.out.println("Ubicación guardada en SessionManager");
-                    } else {
-                        System.out.println("Error en respuesta de ubicación o datos vacíos");
                     }
-                } else {
-                    System.out.println("Usuario logueado es null o no tiene ID");
                 }
 
                 final Ubicacion ubicacionFinal = ubicacion;
-                System.out.println("Ubicación final a usar: " + ubicacionFinal);
 
                 SwingUtilities.invokeLater(() -> {
                     String status = responseEstados.getStatus() != null ? responseEstados.getStatus() : "";
@@ -252,7 +165,6 @@ public class Reportes extends JFrame {
                     if ("OK".equals(status)) {
                         if (data instanceof List<?> listaEstados) {
                             comboEstado.removeAllItems();
-                            System.out.println("Cargando " + listaEstados.size() + " estados en combo");
 
                             for (Object item : listaEstados) {
                                 if (item instanceof Map<?, ?> estadoMap) {
@@ -273,27 +185,17 @@ public class Reportes extends JFrame {
                                 }
                             }
 
-                            System.out.println("Estados cargados en combo: " + comboEstado.getItemCount());
-
                             // Seleccionar el estado del usuario si está disponible
                             if (ubicacionFinal != null) {
-                                System.out.println("Intentando seleccionar estado ID: " + ubicacionFinal.getIdEstado());
                                 seleccionarEstadoPorId(ubicacionFinal.getIdEstado());
-                            } else {
-                                System.out.println("Ubicación final es null, seleccionando primer estado");
-                                if (comboEstado.getItemCount() > 0) {
-                                    comboEstado.setSelectedIndex(0);
-                                }
+                            } else if (comboEstado.getItemCount() > 0) {
+                                comboEstado.setSelectedIndex(0);
                             }
                         }
-                    } else {
-                        System.out.println("Error cargando estados: " + status);
                     }
                 });
 
             } catch (Exception ex) {
-                System.out.println("Excepción en cargarEstadosYUbicacion: " + ex.getMessage());
-                ex.printStackTrace();
                 SwingUtilities.invokeLater(() -> {
                     JOptionPane.showMessageDialog(this,
                             "Error al conectar con el servidor:\n" + ex.getMessage(),
@@ -306,29 +208,127 @@ public class Reportes extends JFrame {
         }).start();
     }
 
-//    private void seleccionarEstadoPorId(Long idEstado) {
-//        for (int i = 0; i < comboEstado.getItemCount(); i++) {
-//            Estado estado = comboEstado.getItemAt(i);
-//            if (estado.getIdestado() == idEstado.intValue()) {
-//                comboEstado.setSelectedIndex(i);
-//                break;
+//    private void cargarEstadosYUbicacion() {
+//        new Thread(() -> {
+//            try {
+//                ClienteAPI api = new ClienteAPI();
+//
+//                // Cargar estados primero
+//                System.out.println("Cargando estados...");
+//                ApiResponse<?> responseEstados = api.obtenerEstados();
+//                System.out.println("Estados cargados: " + responseEstados.getStatus());
+//
+//                // Cargar ubicación del usuario
+//                Ubicacion ubicacion = null;
+//                if (usuarioLogueado != null && usuarioLogueado.getIdusuario() != null) {
+//                    System.out.println("Cargando ubicación para usuario: " + usuarioLogueado.getIdusuario());
+//                    ApiResponse<?> responseUbicacion = api.obtenerUbicacionPorIdUsuario(usuarioLogueado.getIdusuario());
+//                    System.out.println("Respuesta ubicación: " + responseUbicacion.toString());
+//
+//                    if ("OK".equals(responseUbicacion.getStatus()) && responseUbicacion.getData() instanceof Map<?, ?> ubicacionMap) {
+//                        ubicacion = mapearUbicacion(ubicacionMap);
+//                        System.out.println("Ubicación mapeada: " + ubicacion);
+//                        System.out.println("ID Estado: " + ubicacion.getIdEstado());
+//                        System.out.println("ID Municipio: " + ubicacion.getIdMunicipio());
+//                        System.out.println("ID Colonia: " + ubicacion.getIdColonia());
+//
+//                        // Guardar en SessionManager
+//                        SessionManager.getInstance().setUbicacionUsuario(ubicacion);
+//                        System.out.println("Ubicación guardada en SessionManager");
+//                    } else {
+//                        System.out.println("Error en respuesta de ubicación o datos vacíos");
+//                    }
+//                } else {
+//                    System.out.println("Usuario logueado es null o no tiene ID");
+//                }
+//
+//                final Ubicacion ubicacionFinal = ubicacion;
+//                System.out.println("Ubicación final a usar: " + ubicacionFinal);
+//
+//                SwingUtilities.invokeLater(() -> {
+//                    String status = responseEstados.getStatus() != null ? responseEstados.getStatus() : "";
+//                    Object data = responseEstados.getData();
+//
+//                    if ("OK".equals(status)) {
+//                        if (data instanceof List<?> listaEstados) {
+//                            comboEstado.removeAllItems();
+//                            System.out.println("Cargando " + listaEstados.size() + " estados en combo");
+//
+//                            for (Object item : listaEstados) {
+//                                if (item instanceof Map<?, ?> estadoMap) {
+//                                    Integer id = estadoMap.get("idestado") != null
+//                                            ? ((Number) estadoMap.get("idestado")).intValue()
+//                                            : null;
+//                                    String codigo = estadoMap.get("codigo") != null
+//                                            ? estadoMap.get("codigo").toString()
+//                                            : "";
+//                                    String nombre = estadoMap.get("nombre") != null
+//                                            ? estadoMap.get("nombre").toString()
+//                                            : "";
+//
+//                                    if (id != null && !nombre.isEmpty()) {
+//                                        Estado estado = new Estado(id, codigo, nombre);
+//                                        comboEstado.addItem(estado);
+//                                    }
+//                                }
+//                            }
+//
+//                            System.out.println("Estados cargados en combo: " + comboEstado.getItemCount());
+//
+//                            // Seleccionar el estado del usuario si está disponible
+//                            if (ubicacionFinal != null) {
+//                                System.out.println("Intentando seleccionar estado ID: " + ubicacionFinal.getIdEstado());
+//                                seleccionarEstadoPorId(ubicacionFinal.getIdEstado());
+//                            } else {
+//                                System.out.println("Ubicación final es null, seleccionando primer estado");
+//                                if (comboEstado.getItemCount() > 0) {
+//                                    comboEstado.setSelectedIndex(0);
+//                                }
+//                            }
+//                        }
+//                    } else {
+//                        System.out.println("Error cargando estados: " + status);
+//                    }
+//                });
+//
+//            } catch (Exception ex) {
+//                System.out.println("Excepción en cargarEstadosYUbicacion: " + ex.getMessage());
+//                ex.printStackTrace();
+//                SwingUtilities.invokeLater(() -> {
+//                    JOptionPane.showMessageDialog(this,
+//                            "Error al conectar con el servidor:\n" + ex.getMessage(),
+//                            "Error de Conexión",
+//                            JOptionPane.ERROR_MESSAGE);
+//                    // Si hay error, cargar estados normalmente
+//                    cargarEstados();
+//                });
 //            }
-//        }
+//        }).start();
 //    }
 
     private void seleccionarEstadoPorId(Long idEstado) {
-        System.out.println("Buscando estado con ID: " + idEstado);
         for (int i = 0; i < comboEstado.getItemCount(); i++) {
             Estado estado = comboEstado.getItemAt(i);
-            System.out.println("Estado en combo [" + i + "]: ID=" + estado.getIdestado() + ", Nombre=" + estado.getNombre());
             if (estado.getIdestado() == idEstado.intValue()) {
-                System.out.println("¡Estado encontrado! Seleccionando índice: " + i);
                 comboEstado.setSelectedIndex(i);
-                return;
+                break;
             }
         }
-        System.out.println("Estado con ID " + idEstado + " no encontrado en el combo");
     }
+
+//    private void seleccionarEstadoPorId(Long idEstado) {
+//        System.out.println("Buscando estado con ID: " + idEstado);
+//        for (int i = 0; i < comboEstado.getItemCount(); i++) {
+//            Estado estado = comboEstado.getItemAt(i);
+//            System.out.println("Estado en combo [" + i + "]: ID=" + estado.getIdestado() + ", Nombre=" + estado.getNombre());
+//            if (estado.getIdestado() == idEstado.intValue()) {
+//                System.out.println("¡Estado encontrado! Seleccionando índice: " + i);
+//                comboEstado.setSelectedIndex(i);
+//                return;
+//            }
+//        }
+//        System.out.println("Estado con ID " + idEstado + " no encontrado en el combo");
+//    }
 
     private void seleccionarMunicipioPorId(Long idMunicipio) {
         for (int i = 0; i < comboMunicipio.getItemCount(); i++) {

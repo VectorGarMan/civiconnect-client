@@ -219,7 +219,7 @@ public class ClienteAPI {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI(BASE_URL + "/ubicacion/usuarios/ubicacion/" + idusuario))
+                    .uri(new URI(BASE_URL + "/usuarios/ubicacion/" + idusuario))
                     .header("Content-Type", "application/json")
                     .GET()
                     .build();
