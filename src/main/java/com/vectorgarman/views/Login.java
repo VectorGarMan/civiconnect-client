@@ -2,10 +2,14 @@ package com.vectorgarman.views;
 
 import com.vectorgarman.api.ClienteAPI;
 import com.vectorgarman.dto.ApiResponse;
+import com.vectorgarman.dto.Usuario;
+import com.vectorgarman.utils.SessionManager;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.time.LocalDate;
+import java.util.Map;
 
 public class Login extends JDialog {
     private JPanel contentPane;
@@ -16,9 +20,10 @@ public class Login extends JDialog {
     private JButton btnRecuperar;
 
     public Login() {
-        setTitle("CiviConnect");
+        setTitle("CiviConnect - Login");
         setSize(500, 450);
         setLocationRelativeTo(null);
+        setResizable(false);
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         // Agregar listener para cerrar el programa al cerrar la ventana
@@ -28,6 +33,10 @@ public class Login extends JDialog {
                 System.exit(0);
             }
         });
+
+        try {
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+        } catch (Exception ignored) {}
 
         inicializarComponentes();
 
@@ -118,7 +127,7 @@ public class Login extends JDialog {
         // Botón Registrar Usuario
         btnRegistrar = new JButton("Registrar Usuario");
         btnRegistrar.setFont(new Font("Arial", Font.PLAIN, 14));
-        btnRegistrar.setBackground(new Color(60, 179, 113));
+        btnRegistrar.setBackground(new Color(209, 209, 209));
         btnRegistrar.setForeground(Color.BLACK);
         btnRegistrar.setPreferredSize(new Dimension(145, 35));
         btnRegistrar.setFocusPainted(false);
@@ -130,11 +139,11 @@ public class Login extends JDialog {
         panelBotones.add(btnRegistrar);
 
         // Botón Recuperar Contraseña
-        btnRecuperar = new JButton("<html><center>Olvidé mi<br>contraseña</center></html>");
+        btnRecuperar = new JButton("<html><br><center>Olvidé mi<br>contraseña</center><br></html>");
         btnRecuperar.setFont(new Font("Arial", Font.PLAIN, 14));
-        btnRecuperar.setBackground(new Color(220, 20, 60));
+        btnRecuperar.setBackground(new Color(209, 209, 209));
         btnRecuperar.setForeground(Color.BLACK);
-        btnRecuperar.setPreferredSize(new Dimension(145, 35));
+        btnRecuperar.setPreferredSize(new Dimension(145, 40));
         btnRecuperar.setFocusPainted(false);
         btnRecuperar.setMargin(new Insets(2, 2, 2, 2));
         btnRecuperar.addActionListener(new ActionListener() {
@@ -170,52 +179,44 @@ public class Login extends JDialog {
             return;
         }
 
-        // Deshabilitar botón mientras se procesa
         btnLogin.setEnabled(false);
         btnLogin.setText("Iniciando sesión...");
 
-        // Ejecutar en un hilo separado para no bloquear la UI
         new Thread(() -> {
             try {
                 ClienteAPI api = new ClienteAPI();
                 ApiResponse<?> response = api.login(email, password);
 
-                // Volver al hilo de UI para mostrar resultados
                 SwingUtilities.invokeLater(() -> {
                     btnLogin.setEnabled(true);
                     btnLogin.setText("Iniciar Sesión");
 
                     String status = response.getStatus();
                     String mensaje = response.getMensaje();
-                    String detalles = response.getError() != null ? response.getError() : "";
 
                     if ("OK".equals(status)) {
-                        JOptionPane.showMessageDialog(this,
-                                mensaje,
-                                "Éxito",
-                                JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(this, mensaje, "Éxito", JOptionPane.INFORMATION_MESSAGE);
 
-                        // TODO: Redireccionar a la pantalla de index
-                        dispose();
+                        // Mapear usuario usando el mismo patrón que cargarTiposDeUsuario
+                        Object dataObj = response.getData();
+                        Usuario usuarioLogueado = mapearUsuarioDesdeMapa(dataObj);
 
-                    } else {
-                        String message = mensaje + (detalles == null ? "" : "\n" + detalles);
-                        if ("WARNING".equals(status)) {
-                            JOptionPane.showMessageDialog(this,
-                                    message,
-                                    "Advertencia",
-                                    JOptionPane.WARNING_MESSAGE);
-                        } else if ("ERROR".equals(status)) {
-                            JOptionPane.showMessageDialog(this,
-                                    message,
-                                    "Error",
-                                    JOptionPane.ERROR_MESSAGE);
+                        if (usuarioLogueado != null) {
+                            SessionManager.getInstance().setUsuarioLogueado(usuarioLogueado);
+                            this.dispose();
+                            new Reportes(usuarioLogueado);
                         } else {
                             JOptionPane.showMessageDialog(this,
-                                    "Respuesta desconocida desde el servidor.",
+                                    "Error al procesar los datos del usuario",
                                     "Error",
                                     JOptionPane.ERROR_MESSAGE);
                         }
+                    } else {
+                        String detalles = response.getError() != null ? response.getError() : "";
+                        String message = mensaje + (detalles.isEmpty() ? "" : "\n" + detalles);
+
+                        int messageType = "WARNING".equals(status) ? JOptionPane.WARNING_MESSAGE : JOptionPane.ERROR_MESSAGE;
+                        JOptionPane.showMessageDialog(this, message, "Error", messageType);
                     }
                 });
             } catch (Exception ex) {
@@ -229,6 +230,61 @@ public class Login extends JDialog {
                 });
             }
         }).start();
+    }
+
+    private Usuario mapearUsuarioDesdeMapa(Object dataObj) {
+        if (dataObj instanceof Map<?, ?> usuarioMap) {
+            Object idusuarioObj = usuarioMap.get("idusuario");
+            Object idtipousuarioObj = usuarioMap.get("idtipousuario");
+            Object idcoloniaObj = usuarioMap.get("idcolonia");
+            Object emailObj = usuarioMap.get("email");
+            Object nombreusuarioObj = usuarioMap.get("nombreusuario");
+            Object fecharegistroObj = usuarioMap.get("fecharegistro");
+            Object empleadogubverificadoObj = usuarioMap.get("empleadogubverificado");
+
+            if (idusuarioObj != null && idtipousuarioObj != null) {
+                Long idusuario = ((Number) idusuarioObj).longValue();
+                Long idtipousuario = ((Number) idtipousuarioObj).longValue();
+                Long idcolonia = idcoloniaObj != null ? ((Number) idcoloniaObj).longValue() : null;
+
+                String emailUsuario = emailObj != null ? emailObj.toString() : "";
+                String nombreusuario = nombreusuarioObj != null ? nombreusuarioObj.toString() : "";
+
+                // Usar la fecha que viene del servidor directamente
+                LocalDate fecharegistro = null;
+                if (fecharegistroObj != null) {
+                    try {
+                        fecharegistro = LocalDate.parse(fecharegistroObj.toString());
+                    } catch (Exception e) {
+                        System.err.println("Error al parsear fecha: " + e.getMessage());
+                        // Si hay error, usar null y que el constructor de Usuario use su valor por defecto
+                    }
+                }
+
+                Boolean empleadogubverificado = false;
+                if (empleadogubverificadoObj != null) {
+                    if (empleadogubverificadoObj instanceof Boolean) {
+                        empleadogubverificado = (Boolean) empleadogubverificadoObj;
+                    } else if (empleadogubverificadoObj instanceof String) {
+                        empleadogubverificado = Boolean.parseBoolean(empleadogubverificadoObj.toString());
+                    } else if (empleadogubverificadoObj instanceof Number) {
+                        empleadogubverificado = ((Number) empleadogubverificadoObj).intValue() == 1;
+                    }
+                }
+
+                return new Usuario(
+                        idusuario,
+                        idtipousuario,
+                        idcolonia,
+                        emailUsuario,
+                        "", // No guardar contraseña
+                        nombreusuario,
+                        fecharegistro, // Usar la fecha del servidor (puede ser null)
+                        empleadogubverificado
+                );
+            }
+        }
+        return null;
     }
 
     private void onRegistrar() {

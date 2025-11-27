@@ -130,6 +130,25 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    public ApiResponse<?> obtenerTodosLosReportes() throws Exception {
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/reporte/obtener"))
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
     public ApiResponse<?> olvideContrasena(String email) throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -182,6 +201,25 @@ public class ClienteAPI {
         try (HttpClient client = HttpClient.newHttpClient()) {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(new URI(BASE_URL + "/ubicacion/municipio/obtenerPorEstado?idestado=" + idestado))
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        // Parsear la respuesta
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    public ApiResponse<?> obtenerUbicacionPorIdUsuario(Long idusuario) throws Exception {
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/ubicacion/usuarios/ubicacion/" + idusuario))
                     .header("Content-Type", "application/json")
                     .GET()
                     .build();

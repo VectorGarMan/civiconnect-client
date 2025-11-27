@@ -14,24 +14,26 @@ public class CambiarContrasena extends JDialog {
     private JTextField txtToken;
     private JPasswordField txtNuevaPassword;
 
-    private JPanel emailPanel;  // Panel rojo
-    private JPanel tokenPanel;  // Panel azul
+    private JPanel emailPanel;
+    private JPanel tokenPanel;
 
-    private String emailGuardado; // Para mantener el email
+    private JButton btnOkEmail;
+    private JButton btnOkToken;
+
+    private String emailGuardado;
 
     public CambiarContrasena() {
-        setTitle("CiviConnect");
-        setSize(400, 230);
-        setLocationRelativeTo(null);
-        setModal(true);
+        setTitle("CiviConnect - Cambiar Contraseña");
         setLayout(new BorderLayout());
+        setModal(true);
+        setResizable(false);
 
         JLabel titulo = new JLabel("Cambiar Contraseña", SwingConstants.CENTER);
         titulo.setFont(new Font("Arial", Font.BOLD, 18));
+        titulo.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
         add(titulo, BorderLayout.NORTH);
-
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        // Agregar listener para cerrar el programa al cerrar la ventana
+
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -39,12 +41,14 @@ public class CambiarContrasena extends JDialog {
             }
         });
 
+        try {
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+        } catch (Exception ignored) {}
+
         inicializarPanelEmail();
         inicializarPanelToken();
 
-        JPanel container = new JPanel(null);
-        container.setLayout(new CardLayout());
-
+        JPanel container = new JPanel(new CardLayout());
         container.add(emailPanel, "email");
         container.add(tokenPanel, "token");
 
@@ -52,30 +56,32 @@ public class CambiarContrasena extends JDialog {
 
         tokenPanel.setVisible(false);
 
+        pack();
+        setLocationRelativeTo(null);
         setVisible(true);
     }
 
     private void inicializarPanelEmail() {
-        emailPanel = new JPanel();
-        emailPanel.setLayout(new GridLayout(3, 1, 5, 5));
-        emailPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        emailPanel = new JPanel(new GridLayout(3, 1, 5, 5));
+        emailPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
 
         JLabel lblEmail = new JLabel("Ingresa tu email para cambiar la contraseña:");
         txtEmail = new JTextField();
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JButton btnOk = new JButton("OK");
+        btnOkEmail = new JButton("OK");
         JButton btnCancelar = new JButton("Cancelar");
 
-        btnPanel.add(btnOk);
+        btnPanel.add(btnOkEmail);
         btnPanel.add(btnCancelar);
+        btnOkEmail.setEnabled(true);
 
-        btnOk.addActionListener(e -> onEmailOk());
-        btnCancelar.addActionListener(e -> {
-            dispose();
-            Login dialog = new Login();
-            dialog.setVisible(true);
+        btnOkEmail.addActionListener(e -> {
+            btnOkEmail.setEnabled(false);
+            onEmailOk();
         });
+
+        btnCancelar.addActionListener(e -> volverALogin());
 
         emailPanel.add(lblEmail);
         emailPanel.add(txtEmail);
@@ -83,31 +89,31 @@ public class CambiarContrasena extends JDialog {
     }
 
     private void inicializarPanelToken() {
-        tokenPanel = new JPanel();
-        tokenPanel.setLayout(new GridLayout(4, 1, 5, 5));
+        tokenPanel = new JPanel(new GridLayout(5, 1, 5, 5));
         tokenPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JLabel lblToken = new JLabel("Token:");
+        JLabel lblEmail = new JLabel("Pega el código de verificación (revisa tu correo):");
         txtToken = new JTextField();
 
         JLabel lblNuevaPassword = new JLabel("Nueva contraseña:");
         txtNuevaPassword = new JPasswordField();
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JButton btnOk = new JButton("OK");
+        btnOkToken = new JButton("OK");
         JButton btnCancelar = new JButton("Cancelar");
 
-        btnPanel.add(btnOk);
+        btnPanel.add(btnOkToken);
         btnPanel.add(btnCancelar);
+        btnOkToken.setEnabled(true);
 
-        btnOk.addActionListener(e -> onTokenOk());
-        btnCancelar.addActionListener(e -> {
-            dispose();
-            Login dialog = new Login();
-            dialog.setVisible(true);
+        btnOkToken.addActionListener(e -> {
+            btnOkToken.setEnabled(false);
+            onTokenOk();
         });
 
-        tokenPanel.add(lblToken);
+        btnCancelar.addActionListener(e -> volverALogin());
+
+        tokenPanel.add(lblEmail);
         tokenPanel.add(txtToken);
         tokenPanel.add(lblNuevaPassword);
         tokenPanel.add(txtNuevaPassword);
@@ -122,6 +128,7 @@ public class CambiarContrasena extends JDialog {
                     "Por favor, ingresa tu email",
                     "Validación",
                     JOptionPane.WARNING_MESSAGE);
+            btnOkEmail.setEnabled(true);
             return;
         }
 
@@ -137,33 +144,31 @@ public class CambiarContrasena extends JDialog {
                     String message = mensaje + (detalles.isEmpty() ? "" : "\n" + detalles);
 
                     if ("OK".equals(status)) {
-                        this.emailGuardado = email;
+                        emailGuardado = email;
 
                         emailPanel.setVisible(false);
                         tokenPanel.setVisible(true);
 
-                        JOptionPane.showMessageDialog(this,
-                                message,
-                                "Código enviado",
-                                JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(this, message,
+                                "Código enviado", JOptionPane.INFORMATION_MESSAGE);
 
                     } else {
-                        JOptionPane.showMessageDialog(this,
-                                message,
-                                "Error",
-                                JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(this, message,
+                                "Error", JOptionPane.ERROR_MESSAGE);
+                        btnOkEmail.setEnabled(true);
                     }
                 });
 
             } catch (Exception ex) {
-                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
-                        "Error al conectar con el servidor:\n" + ex.getMessage(),
-                        "Error de Conexión",
-                        JOptionPane.ERROR_MESSAGE));
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this,
+                            "Error al conectar con el servidor:\n" + ex.getMessage(),
+                            "Error de Conexión", JOptionPane.ERROR_MESSAGE);
+                    btnOkEmail.setEnabled(true);
+                });
             }
         }).start();
     }
-
 
     private void onTokenOk() {
         String token = txtToken.getText().trim();
@@ -172,55 +177,47 @@ public class CambiarContrasena extends JDialog {
         if (token.isEmpty() || nuevaPass.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                     "Debe ingresar el token y la nueva contraseña",
-                    "Validación",
-                    JOptionPane.WARNING_MESSAGE);
+                    "Validación", JOptionPane.WARNING_MESSAGE);
+            btnOkToken.setEnabled(true);
             return;
         }
 
-        // Ejecutar en un hilo separado para no bloquear la UI
         new Thread(() -> {
             try {
                 ClienteAPI api = new ClienteAPI();
                 ApiResponse<?> response = api.cambiarContrasena(token, nuevaPass, emailGuardado);
 
-                // Volver al hilo de UI para mostrar resultados
                 SwingUtilities.invokeLater(() -> {
                     String status = response.getStatus();
                     String mensaje = response.getMensaje();
                     String detalles = response.getError() != null ? response.getError() : "";
-
                     String message = mensaje + (detalles == null ? "" : "\n" + detalles);
-                    if ("OK".equals(status)) {
-                        JOptionPane.showMessageDialog(this,
-                                message,
-                                "Éxito",
-                                JOptionPane.INFORMATION_MESSAGE);
-                        dispose();
-                        Login dialog = new Login();
-                        dialog.setVisible(true);
-                    } else if ("ERROR".equals(status)) {
-                        JOptionPane.showMessageDialog(this,
-                                message,
-                                "Error",
-                                JOptionPane.ERROR_MESSAGE);
-                        dispose();
-                        Login dialog = new Login();
-                        dialog.setVisible(true);
-                    }
 
+                    if ("OK".equals(status)) {
+                        JOptionPane.showMessageDialog(this, message,
+                                "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                        volverALogin();
+                    } else {
+                        JOptionPane.showMessageDialog(this, message,
+                                "Error", JOptionPane.ERROR_MESSAGE);
+                        btnOkToken.setEnabled(true);
+                    }
                 });
+
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
-                    dispose();
-                    CambiarContrasena dialog = new CambiarContrasena();
-                    dialog.setVisible(true);
                     JOptionPane.showMessageDialog(this,
                             "Error al conectar con el servidor:\n" + ex.getMessage(),
-                            "Error de Conexión",
-                            JOptionPane.ERROR_MESSAGE);
+                            "Error de Conexión", JOptionPane.ERROR_MESSAGE);
+                    btnOkToken.setEnabled(true);
                 });
             }
         }).start();
+    }
+
+    private void volverALogin() {
+        dispose();
+        new Login().setVisible(true);
     }
 
     public static void main(String[] args) {

@@ -37,4 +37,14 @@ public class ApiResponse<T> {
     public void setData(T data) {
         this.data = data;
     }
+
+    @Override
+    public String toString() {
+        return "ApiResponse{" +
+                "status='" + status + '\'' +
+                ", mensaje='" + mensaje + '\'' +
+                ", error='" + error + '\'' +
+                ", data=" + data +
+                '}';
+    }
 }

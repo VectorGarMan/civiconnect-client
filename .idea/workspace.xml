@@ -6,9 +6,16 @@
   <component name="ChangeListManager">
     <list default="true" id="1f6023ce-b786-41f8-a506-a31e3b556676" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/Main.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/api/ClienteAPI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/api/ClienteAPI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/dto/ApiResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/dto/ApiResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/dto/Estado.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/dto/Estado.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/dto/Usuario.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/dto/Usuario.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/CambiarContrasena.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/CambiarContrasena.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Login.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Login.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Registro.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Registro.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/index.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/index.java" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,11 +46,14 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Application.CambiarContrasena.executor": "Run",
+    "Application.CiviConnect-Client.executor": "Run",
+    "Application.Index.executor": "Run",
     "Application.Login.executor": "Run",
     "Application.Login2.executor": "Run",
     "Application.LoginForm.executor": "Run",
     "Application.Main.executor": "Run",
     "Application.Registro.executor": "Run",
+    "Application.Reportes.executor": "Run",
     "Application.index.executor": "Run",
     "Application.testForm.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
@@ -51,7 +61,7 @@
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
     "RunOnceActivity.git.unshallow": "true",
     "git-widget-placeholder": "main",
-    "last_opened_file_path": "C:/code/intellij/civiconnect-client",
+    "last_opened_file_path": "C:/code/intellij/civiconnect-client/src/main/java/com/vectorgarman/dto",
     "project.structure.last.edited": "Project",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
@@ -59,9 +69,21 @@
   }
 }]]></component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\code\intellij\civiconnect-client\src\main\java\com\vectorgarman\dto" />
+    </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="com.vectorgarman.dto" />
     </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="CiviConnect-Client" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="com.vectorgarman.Main" />
+      <module name="civiconnect-client" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">

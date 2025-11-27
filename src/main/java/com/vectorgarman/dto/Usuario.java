@@ -16,7 +16,7 @@ public class Usuario {
 
     private String nombreusuario;
 
-    private LocalDate fecharegistro = LocalDate.now();
+    private LocalDate fecharegistro;
 
     private Boolean empleadogubverificado;
 
