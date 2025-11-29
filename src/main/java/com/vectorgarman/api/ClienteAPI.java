@@ -3,10 +3,7 @@ package com.vectorgarman.api;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
-import com.vectorgarman.dto.ApiResponse;
-import com.vectorgarman.dto.CambioContrasenaRequest;
-import com.vectorgarman.dto.LoginRequest;
-import com.vectorgarman.dto.UsuarioRequest;
+import com.vectorgarman.dto.*;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -231,6 +228,72 @@ public class ClienteAPI {
         }
 
         // Parsear la respuesta
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    public ApiResponse<?> votarReporte(Long idReporte, Long idUsuario) throws Exception {
+        VotarReporteRequest requestBody = new VotarReporteRequest();
+        requestBody.setIdreporte(idReporte);
+        requestBody.setIdusuario(idUsuario);
+
+        String jsonBody = gson.toJson(requestBody);
+
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/reporte/votar"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    public ApiResponse<?> quitarVotoReporte(Long idReporte, Long idUsuario) throws Exception {
+        VotarReporteRequest requestBody = new VotarReporteRequest();
+        requestBody.setIdreporte(idReporte);
+        requestBody.setIdusuario(idUsuario);
+
+        String jsonBody = gson.toJson(requestBody);
+
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/reporte/eliminarVoto"))
+                    .header("Content-Type", "application/json")
+                    .method("DELETE", HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    public ApiResponse<?> obtenerReportesVotadosPorUsuario(Long idUsuario) throws Exception {
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/reporte/obtenerVotadoPorUsuario/" + idUsuario))
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 

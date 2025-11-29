@@ -8,9 +8,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 public class Reportes extends JFrame {
     private Usuario usuarioLogueado;
@@ -26,6 +25,9 @@ public class Reportes extends JFrame {
 
     private List<Map<?, ?>> todosLosReportes = new ArrayList<>();
     private List<Map<?, ?>> reportesFiltrados = new ArrayList<>();
+    private List<ItemReporte> itemsVisibles = new ArrayList<>();
+
+    private Set<Long> reportesVotadosPorUsuario = new HashSet<>();
 
     public Reportes(Usuario usuario) {
         this.usuarioLogueado = usuario;
@@ -43,7 +45,7 @@ public class Reportes extends JFrame {
         cargarEstadosYUbicacion();
         cargarReportes();
 
-        setSize(1000, 600);
+        setSize(1000, 700);
 
         setLocationRelativeTo(null);
         setVisible(true);
@@ -121,21 +123,28 @@ public class Reportes extends JFrame {
 
         header.add(filtrosPanel, BorderLayout.WEST);
 
-        JPanel botonesPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        btnCrearReporte = new JButton("+");
-        btnCrearReporte.setPreferredSize(new Dimension(45, 35));
-
-        btnPerfil = new JButton("Mi perfil");
-        btnPerfil.setPreferredSize(new Dimension(70, 35));
-
         // Botón para limpiar filtros
-        JButton btnLimpiarFiltros = new JButton("Limpiar");
-        btnLimpiarFiltros.setPreferredSize(new Dimension(70, 35));
+        JButton btnLimpiarFiltros = new JButton("<html><br><center>Restablecer<br>filtros</center><br></html>");
+        btnLimpiarFiltros.setFont(new Font("Arial", Font.BOLD, 11));
+        btnLimpiarFiltros.setPreferredSize(new Dimension(100, 50));
         btnLimpiarFiltros.addActionListener(e -> limpiarFiltros());
 
+        // Espaciador
+        JLabel lblEspaciador = new JLabel("                                         ");
+
+        // Botón para crear reporte
+        JPanel botonesPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        btnCrearReporte = new JButton("➕");
+        btnCrearReporte.setPreferredSize(new Dimension(45, 35));
+
+        // Botón de perfil
+        btnPerfil = new JButton("👤");
+        btnPerfil.setPreferredSize(new Dimension(45, 35));
+
+        botonesPanel.add(btnLimpiarFiltros);
+        botonesPanel.add(lblEspaciador);
         botonesPanel.add(btnCrearReporte);
         botonesPanel.add(btnPerfil);
-        botonesPanel.add(btnLimpiarFiltros);
 
 
         header.add(botonesPanel, BorderLayout.EAST);
@@ -153,7 +162,7 @@ public class Reportes extends JFrame {
         } else {
             comboEstado.setSelectedIndex(0);
         }
-        aplicarFiltrosYMostrar();
+        cargarReportes();
     }
 
     /** LISTA DE REPORTES **/
@@ -458,10 +467,73 @@ public class Reportes extends JFrame {
         }
     }
 
+    private void cargarReportesVotados() {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ApiResponse<?> response = api.obtenerReportesVotadosPorUsuario(usuarioLogueado.getIdusuario());
+
+                if ("OK".equals(response.getStatus())) {
+                    Object dataObj = response.getData();
+
+                    if (dataObj instanceof List<?> reportesVotados) {
+                        reportesVotadosPorUsuario.clear();
+
+                        for (Object item : reportesVotados) {
+                            if (item instanceof Map<?, ?> reporteMap) {
+                                // Extraer el reporteView
+                                Map<?, ?> reporteView = reporteMap.get("reporteView") instanceof Map
+                                        ? (Map<?, ?>) reporteMap.get("reporteView")
+                                        : null;
+
+                                if (reporteView != null) {
+                                    Object idObj = reporteView.get("idreporte");
+                                    if (idObj != null) {
+                                        Long idReporte = ((Number) idObj).longValue();
+                                        reportesVotadosPorUsuario.add(idReporte);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                System.err.println("Error al cargar reportes votados: " + ex.getMessage());
+                System.out.println(ex.getMessage());
+            }
+        }).start();
+    }
+
     private void cargarReportes() {
         new Thread(() -> {
             try {
                 ClienteAPI api = new ClienteAPI();
+                ApiResponse<?> responseVotados = api.obtenerReportesVotadosPorUsuario(usuarioLogueado.getIdusuario());
+
+                if ("OK".equals(responseVotados.getStatus())) {
+                    Object dataVotados = responseVotados.getData();
+
+                    if (dataVotados instanceof List<?> reportesVotados) {
+                        reportesVotadosPorUsuario.clear();
+
+                        for (Object item : reportesVotados) {
+                            if (item instanceof Map<?, ?> reporteMap) {
+                                Map<?, ?> reporteView = reporteMap.get("reporteView") instanceof Map
+                                        ? (Map<?, ?>) reporteMap.get("reporteView")
+                                        : null;
+
+                                if (reporteView != null) {
+                                    Object idObj = reporteView.get("idreporte");
+                                    if (idObj != null) {
+                                        Long idReporte = ((Number) idObj).longValue();
+                                        reportesVotadosPorUsuario.add(idReporte);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 ApiResponse<?> response = api.obtenerTodosLosReportes();
 
                 SwingUtilities.invokeLater(() -> {
@@ -521,8 +593,6 @@ public class Reportes extends JFrame {
                 resultado.add(reporteMap);
             }
         }
-
-        System.out.println("Reportes después de filtrar: " + resultado.size());
         return resultado;
     }
 
@@ -565,26 +635,9 @@ public class Reportes extends JFrame {
         return value != null ? value.toString().trim() : null;
     }
 
-//    private boolean cumpleFiltros(Map<?, ?> reporteMap, Estado estado, Municipio municipio, Colonia colonia) {
-//        // Extraer la ubicación del reporte
-//        Map<?, ?> reporteView = reporteMap.get("reporteView") instanceof Map ? (Map<?, ?>) reporteMap.get("reporteView") : null;
-//        if (reporteView == null) return false;
-//
-//        // Obtener IDs de ubicación del reporte
-//        Long idEstadoReporte = reporteView.get("idestado") != null ? ((Number) reporteView.get("idestado")).longValue() : null;
-//        Long idMunicipioReporte = reporteView.get("idmunicipio") != null ? ((Number) reporteView.get("idmunicipio")).longValue() : null;
-//        Long idColoniaReporte = reporteView.get("idcolonia") != null ? ((Number) reporteView.get("idcolonia")).longValue() : null;
-//
-//        // Aplicar filtros jerárquicamente
-//        boolean cumpleEstado = (estado == null) || (idEstadoReporte != null && idEstadoReporte.equals((long) estado.getIdestado()));
-//        boolean cumpleMunicipio = (municipio == null) || (idMunicipioReporte != null && idMunicipioReporte.equals((long) municipio.getIdmunicipio()));
-//        boolean cumpleColonia = (colonia == null) || (idColoniaReporte != null && idColoniaReporte.equals((long) colonia.getIdcolonia()));
-//
-//        return cumpleEstado && cumpleMunicipio && cumpleColonia;
-//    }
-
     private void mostrarReportesFiltrados() {
         panelListaReportes.removeAll();
+        itemsVisibles.clear();
 
         if (reportesFiltrados.isEmpty()) {
             // Mostrar mensaje cuando no hay reportes
@@ -611,14 +664,26 @@ public class Reportes extends JFrame {
 
         if (reporteView == null) return new JPanel();
 
-        String creador = reporteView.get("creador") != null ? reporteView.get("creador").toString() : "Anónimo";
-        String fechaCreacion = reporteView.get("fechacreacion") != null ? reporteView.get("fechacreacion").toString() : "";
-        String estadoReporte = reporteView.get("estadoreporte") != null ? reporteView.get("estadoreporte").toString() : "Pendiente";
-        String colorEstado = reporteView.get("colorestado") != null ? reporteView.get("colorestado").toString() : "#FFA500";
-        String prioridad = reporteView.get("prioridad") != null ? reporteView.get("prioridad").toString() : "Media";
+        // Obtener todos los datos del reporte
+        Long idReporte = reporteView.get("idreporte") != null ? ((Number) reporteView.get("idreporte")).longValue() : null;
         String titulo = reporteView.get("titulo") != null ? reporteView.get("titulo").toString() : "Sin título";
         String descripcion = reporteView.get("descripcion") != null ? reporteView.get("descripcion").toString() : "";
         String solucionpropuesta = reporteView.get("solucionpropuesta") != null ? reporteView.get("solucionpropuesta").toString() : "";
+        String fechaCreacion = reporteView.get("fechacreacion") != null ? reporteView.get("fechacreacion").toString() : "";
+        String fechaactualizacion = reporteView.get("fechaactualizacion") != null ? reporteView.get("fechaactualizacion").toString() : "";
+        Long idusuariocreador = reporteView.get("idusuariocreador") != null ? ((Number) reporteView.get("idusuariocreador")).longValue() : null;
+        String creador = reporteView.get("creador") != null ? reporteView.get("creador").toString() : "Anónimo";
+        String emailcreador = reporteView.get("emailcreador") != null ? reporteView.get("emailcreador").toString() : "";
+        String categoria = reporteView.get("categoria") != null ? reporteView.get("categoria").toString() : "";
+        String estadoReporte = reporteView.get("estadoreporte") != null ? reporteView.get("estadoreporte").toString() : "Pendiente";
+        String colorEstado = reporteView.get("colorestado") != null ? reporteView.get("colorestado").toString() : "#FFA500";
+        String prioridad = reporteView.get("prioridad") != null ? reporteView.get("prioridad").toString() : "Media";
+        Long nivelnumerico = reporteView.get("nivelnumerico") != null ? ((Number) reporteView.get("nivelnumerico")).longValue() : null;
+        String colonia = reporteView.get("colonia") != null ? reporteView.get("colonia").toString() : "";
+        String municipio = reporteView.get("municipio") != null ? reporteView.get("municipio").toString() : "";
+        String estado = reporteView.get("estado") != null ? reporteView.get("estado").toString() : "";
+        String calle = reporteView.get("calle") != null ? reporteView.get("calle").toString() : "";
+        String referencia = reporteView.get("referencia") != null ? reporteView.get("referencia").toString() : "";
         Long totalVotos = reporteView.get("totalvotos") != null ? ((Number) reporteView.get("totalvotos")).longValue() : 0;
         Long totalComentarios = reporteView.get("totalcomentarios") != null ? ((Number) reporteView.get("totalcomentarios")).longValue() : 0;
 
@@ -626,7 +691,371 @@ public class Reportes extends JFrame {
         JPanel tarjeta = new JPanel();
         tarjeta.setLayout(new BorderLayout());
         tarjeta.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
-        tarjeta.setMaximumSize(new Dimension(900, 420));
+        tarjeta.setMaximumSize(new Dimension(900, 440));
+        tarjeta.setBackground(Color.WHITE);
+
+        // Barra de color según estado
+        JPanel barraColor = new JPanel();
+        barraColor.setPreferredSize(new Dimension(900, 30));
+        try {
+            barraColor.setBackground(Color.decode(colorEstado));
+        } catch (Exception e) {
+            barraColor.setBackground(new Color(255, 165, 0)); // Naranja por defecto
+        }
+        tarjeta.add(barraColor, BorderLayout.NORTH);
+
+        // ⭐ PANEL PRINCIPAL CON DOS COLUMNAS
+        JPanel contenidoPrincipal = new JPanel(new BorderLayout(10, 0));
+        contenidoPrincipal.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        contenidoPrincipal.setBackground(Color.WHITE);
+
+        // ========== COLUMNA IZQUIERDA (CONTENIDO PRINCIPAL) ==========
+        JPanel columnaIzquierda = new JPanel();
+        columnaIzquierda.setLayout(new BoxLayout(columnaIzquierda, BoxLayout.Y_AXIS));
+        columnaIzquierda.setBackground(Color.WHITE);
+
+        // Línea 1: Creador y fecha
+        JLabel lblCreadorFecha = new JLabel("@ " + creador + " • " + fechaCreacion);
+        lblCreadorFecha.setFont(new Font("Arial", Font.BOLD, 13));
+        lblCreadorFecha.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Línea 2: Estado y prioridad
+        JLabel lblEstadoPrioridad = new JLabel(
+                "<html>Estado: <span style='color:" + colorEstado + ";'><b>" + estadoReporte + "</b></span>&nbsp;&nbsp;•&nbsp;&nbsp;Prioridad: <b>" + prioridad + "</b></html>"
+        );
+        lblEstadoPrioridad.setFont(new Font("Arial", Font.PLAIN, 12));
+        lblEstadoPrioridad.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Título del reporte
+        JLabel lblTitulo = new JLabel(titulo);
+        lblTitulo.setFont(new Font("Arial", Font.BOLD, 16));
+        lblTitulo.setForeground(new Color(20, 20, 20));
+        lblTitulo.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Descripción (MÁS COMPACTA)
+        JTextArea txtDescripcion = new JTextArea(descripcion);
+        txtDescripcion.setLineWrap(true);
+        txtDescripcion.setWrapStyleWord(true);
+        txtDescripcion.setEditable(false);
+        txtDescripcion.setFont(new Font("Arial", Font.PLAIN, 12));
+        txtDescripcion.setBackground(Color.WHITE);
+        txtDescripcion.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        JScrollPane scrollDescripcion = new JScrollPane(txtDescripcion);
+        scrollDescripcion.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
+        scrollDescripcion.setPreferredSize(new Dimension(520, 60)); // ⭐ Más compacto y menos ancho
+        scrollDescripcion.setAlignmentX(Component.LEFT_ALIGNMENT);
+        scrollDescripcion.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollDescripcion.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        // Solución propuesta (MÁS COMPACTA)
+        JLabel lblSolucionpropuesta = new JLabel("Solución propuesta:");
+        lblSolucionpropuesta.setFont(new Font("Arial", Font.BOLD, 13));
+        lblSolucionpropuesta.setForeground(new Color(0, 102, 204));
+        lblSolucionpropuesta.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JTextArea txtSolucionpropuesta = new JTextArea(solucionpropuesta);
+        txtSolucionpropuesta.setLineWrap(true);
+        txtSolucionpropuesta.setWrapStyleWord(true);
+        txtSolucionpropuesta.setEditable(false);
+        txtSolucionpropuesta.setFont(new Font("Arial", Font.PLAIN, 12));
+        txtSolucionpropuesta.setBackground(new Color(245, 245, 245));
+        txtSolucionpropuesta.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        JScrollPane scrollSolucion = new JScrollPane(txtSolucionpropuesta);
+        scrollSolucion.setBorder(BorderFactory.createDashedBorder(Color.GRAY));
+        scrollSolucion.setPreferredSize(new Dimension(520, 60)); // ⭐ Más compacto y menos ancho
+        scrollSolucion.setAlignmentX(Component.LEFT_ALIGNMENT);
+        scrollSolucion.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollSolucion.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        // Evidencia (MÁS COMPACTA)
+        JLabel lblEvidencia = new JLabel("Evidencia:");
+        lblEvidencia.setFont(new Font("Arial", Font.BOLD, 13));
+        lblEvidencia.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JPanel panelEvidencias = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 5));
+        panelEvidencias.setBackground(Color.WHITE);
+        panelEvidencias.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Cargar evidencias del array (IMÁGENES MÁS PEQUEÑAS)
+        Object evidenciasObj = reporteMap.get("evidencias");
+        if (evidenciasObj instanceof List<?> evidencias && !evidencias.isEmpty()) {
+            int count = Math.min(evidencias.size(), 3);
+            for (int i = 0; i < count; i++) {
+                if (evidencias.get(i) instanceof Map<?, ?> evidenciaMap) {
+                    try {
+                        Object archivoObj = evidenciaMap.get("archivo");
+                        if (archivoObj != null) {
+                            String base64String = archivoObj.toString();
+                            byte[] bytesImagen = java.util.Base64.getDecoder().decode(base64String);
+                            java.io.InputStream in = new java.io.ByteArrayInputStream(bytesImagen);
+                            java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(in);
+
+                            if (image != null) {
+                                // ⭐ Imágenes más pequeñas (120x80 en lugar de 150x100)
+                                java.awt.Image scaledImage = image.getScaledInstance(120, 80, java.awt.Image.SCALE_SMOOTH);
+                                ImageIcon icon = new ImageIcon(scaledImage);
+
+                                JLabel lblImagen = new JLabel(icon);
+                                lblImagen.setPreferredSize(new Dimension(120, 80));
+                                lblImagen.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+                                panelEvidencias.add(lblImagen);
+
+                                lblImagen.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                                lblImagen.addMouseListener(new MouseAdapter() {
+                                    @Override
+                                    public void mouseClicked(MouseEvent e) {
+                                        mostrarImagenGrande(image, lblImagen);
+                                    }
+                                });
+                            } else {
+                                JLabel imgPlaceholder = new JLabel("Error img");
+                                imgPlaceholder.setPreferredSize(new Dimension(120, 80));
+                                imgPlaceholder.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+                                imgPlaceholder.setHorizontalAlignment(SwingConstants.CENTER);
+                                panelEvidencias.add(imgPlaceholder);
+                            }
+                        } else {
+                            JLabel imgPlaceholder = new JLabel("Sin imagen");
+                            imgPlaceholder.setPreferredSize(new Dimension(120, 80));
+                            imgPlaceholder.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+                            imgPlaceholder.setHorizontalAlignment(SwingConstants.CENTER);
+                            panelEvidencias.add(imgPlaceholder);
+                        }
+                    } catch (Exception ex) {
+                        JLabel imgPlaceholder = new JLabel("Error");
+                        imgPlaceholder.setPreferredSize(new Dimension(120, 80));
+                        imgPlaceholder.setBorder(BorderFactory.createLineBorder(Color.RED, 1));
+                        imgPlaceholder.setHorizontalAlignment(SwingConstants.CENTER);
+                        panelEvidencias.add(imgPlaceholder);
+                        System.out.println(ex.getMessage());
+                    }
+                }
+            }
+        } else {
+            JLabel sinEvidencias = new JLabel("Sin evidencias");
+            sinEvidencias.setPreferredSize(new Dimension(120, 80));
+            sinEvidencias.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
+            sinEvidencias.setHorizontalAlignment(SwingConstants.CENTER);
+            panelEvidencias.add(sinEvidencias);
+        }
+
+        // Panel para comentarios y votos
+        JPanel panelSocial = new JPanel();
+        panelSocial.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        panelSocial.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panelSocial.setBackground(Color.WHITE);
+
+        JButton btnVotar = new JButton("❤");
+        btnVotar.setFocusable(false);
+        btnVotar.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
+        btnVotar.setBorderPainted(false);
+        btnVotar.setContentAreaFilled(false);
+        btnVotar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        JLabel lblVotos = new JLabel(String.valueOf(totalVotos));
+        lblVotos.setFont(new Font("Arial", Font.PLAIN, 12));
+
+        boolean yaVotoEsteReporte = reportesVotadosPorUsuario.contains(idReporte);
+
+        Map<String, Object> reporteConvertido = new java.util.HashMap<>();
+        reporteConvertido.put("idreporte", idReporte);
+        reporteConvertido.put("totalvotos", totalVotos);
+        reporteConvertido.put("yaVoto", yaVotoEsteReporte);
+        reporteConvertido.put("reporteView", reporteView);
+
+        itemsVisibles.add(new ItemReporte(reporteConvertido, lblVotos));
+        final int index = itemsVisibles.size() - 1;
+
+        if (yaVotoEsteReporte) {
+            btnVotar.setForeground(Color.RED);
+        } else {
+            btnVotar.setForeground(Color.BLACK);
+        }
+
+        btnVotar.addActionListener(e -> {
+            ItemReporte item = itemsVisibles.get(index);
+            boolean yaVoto = (boolean) item.getData().getOrDefault("yaVoto", false);
+
+            if (yaVoto) {
+                quitarVoto(index);
+                btnVotar.setForeground(Color.BLACK);
+            } else {
+                votar(index);
+                btnVotar.setForeground(Color.RED);
+            }
+        });
+
+        JButton btnComentarios = new JButton("💬");
+        btnComentarios.setFocusable(false);
+        btnComentarios.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
+        btnComentarios.setBorderPainted(false);
+        btnComentarios.setContentAreaFilled(false);
+        btnComentarios.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        JLabel lblComentarios = new JLabel(String.valueOf(totalComentarios));
+        lblComentarios.setFont(new Font("Arial", Font.PLAIN, 12));
+
+        panelSocial.add(btnVotar);
+        panelSocial.add(lblVotos);
+        panelSocial.add(Box.createHorizontalStrut(15));
+        panelSocial.add(btnComentarios);
+        panelSocial.add(lblComentarios);
+
+        // Agregar componentes a columna izquierda
+        columnaIzquierda.add(lblCreadorFecha);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 5)));
+        columnaIzquierda.add(lblEstadoPrioridad);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 8)));
+        columnaIzquierda.add(lblTitulo);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 5)));
+        columnaIzquierda.add(scrollDescripcion);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 8)));
+        columnaIzquierda.add(lblSolucionpropuesta);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 5)));
+        columnaIzquierda.add(scrollSolucion);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 8)));
+        columnaIzquierda.add(lblEvidencia);
+        columnaIzquierda.add(panelEvidencias);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 8)));
+        columnaIzquierda.add(panelSocial);
+
+        // ========== COLUMNA DERECHA (INFORMACIÓN ADICIONAL) ==========
+        JPanel columnaDerecha = new JPanel();
+        columnaDerecha.setLayout(new BoxLayout(columnaDerecha, BoxLayout.Y_AXIS));
+        columnaDerecha.setBackground(new Color(248, 249, 250));
+        columnaDerecha.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 220, 220), 1),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        ));
+        columnaDerecha.setPreferredSize(new Dimension(280, 0));
+
+        // Título de la sección
+        JLabel lblInfoAdicional = new JLabel("Información extra");
+        lblInfoAdicional.setFont(new Font("Arial", Font.BOLD, 14));
+        lblInfoAdicional.setForeground(new Color(50, 50, 50));
+        lblInfoAdicional.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JSeparator separador = new JSeparator();
+        separador.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+
+        columnaDerecha.add(lblInfoAdicional);
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 5)));
+        columnaDerecha.add(separador);
+
+        // Categoría
+        JPanel panelCategoria = crearCampoInfo("Categoría", categoria);
+
+        // Ubicación
+        String ubicacionCompleta = String.join(", ",
+                !calle.isEmpty() ? calle : "Sin calle",
+                !colonia.isEmpty() ? colonia : "",
+                !municipio.isEmpty() ? municipio : "",
+                !estado.isEmpty() ? estado : ""
+        );
+        JPanel panelUbicacion = crearCampoInfo("Ubicación", ubicacionCompleta);
+
+        // Referencia
+        if (!referencia.isEmpty()) {
+            JPanel panelReferencia = crearCampoInfo("Referencia", referencia);
+            columnaDerecha.add(Box.createRigidArea(new Dimension(0, 5)));
+            columnaDerecha.add(panelReferencia);
+        }
+
+        // Email del creador
+        if (!emailcreador.isEmpty()) {
+            JPanel panelEmail = crearCampoInfo("Email del creador del reporte", emailcreador);
+            columnaDerecha.add(Box.createRigidArea(new Dimension(0, 5)));
+            columnaDerecha.add(panelEmail);
+        }
+
+        // Fecha de actualización
+        if (!fechaactualizacion.isEmpty() && !fechaactualizacion.equals(fechaCreacion)) {
+            JPanel panelActualizacion = crearCampoInfo("Actualizado", fechaactualizacion);
+            columnaDerecha.add(Box.createRigidArea(new Dimension(0, 5)));
+            columnaDerecha.add(panelActualizacion);
+        }
+
+        // Agregar componentes a columna derecha
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 10)));
+        columnaDerecha.add(panelCategoria);
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 5)));
+        columnaDerecha.add(panelUbicacion);
+
+        // Espacio flexible al final
+        columnaDerecha.add(Box.createVerticalGlue());
+
+        contenidoPrincipal.add(columnaIzquierda, BorderLayout.CENTER);
+        contenidoPrincipal.add(columnaDerecha, BorderLayout.EAST);
+
+        tarjeta.add(contenidoPrincipal, BorderLayout.CENTER);
+
+        return tarjeta;
+    }
+
+    private JPanel crearCampoInfo(String etiqueta, String valor) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(new Color(248, 249, 250));
+        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lblEtiqueta = new JLabel(etiqueta);
+        lblEtiqueta.setFont(new Font("Arial", Font.BOLD, 11));
+        lblEtiqueta.setForeground(new Color(100, 100, 100));
+        lblEtiqueta.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JTextArea txtValor = new JTextArea(valor);
+        txtValor.setFont(new Font("Arial", Font.PLAIN, 11));
+        txtValor.setForeground(new Color(50, 50, 50));
+        txtValor.setLineWrap(true);
+        txtValor.setWrapStyleWord(true);
+        txtValor.setEditable(false);
+        txtValor.setBackground(new Color(248, 249, 250));
+        txtValor.setBorder(BorderFactory.createEmptyBorder(2, 0, 0, 0));
+        txtValor.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        panel.add(lblEtiqueta);
+        panel.add(txtValor);
+
+        return panel;
+    }
+
+/*
+    private JPanel crearTarjetaReporte(Map<?, ?> reporteMap) {
+        // Extraer datos del mapa del reporteView
+        Map<?, ?> reporteView = reporteMap.get("reporteView") instanceof Map ? (Map<?, ?>) reporteMap.get("reporteView") : null;
+
+        if (reporteView == null) return new JPanel();
+
+        // TODO: OBTENER TODOS LOS DATOS DEL REPORTE, POR QUE NO MUESTRO TODOS LOS DATOS DE REPORTES COMPLETOS
+        Long idReporte = reporteView.get("idreporte") != null ? ((Number) reporteView.get("idreporte")).longValue() : null;
+        String titulo = reporteView.get("titulo") != null ? reporteView.get("titulo").toString() : "Sin título";
+        String descripcion = reporteView.get("descripcion") != null ? reporteView.get("descripcion").toString() : "";
+        String solucionpropuesta = reporteView.get("solucionpropuesta") != null ? reporteView.get("solucionpropuesta").toString() : "";
+        String fechaCreacion = reporteView.get("fechacreacion") != null ? reporteView.get("fechacreacion").toString() : "";
+        String fechaactualizacion = reporteView.get("fechaactualizacion") != null ? reporteView.get("fechaactualizacion").toString() : "";
+        Long idusuariocreador = reporteView.get("idusuariocreador") != null ? ((Number) reporteView.get("idusuariocreador")).longValue() : null;
+        String creador = reporteView.get("creador") != null ? reporteView.get("creador").toString() : "Anónimo";
+        String emailcreador = reporteView.get("emailcreador") != null ? reporteView.get("emailcreador").toString() : "";
+        String categoria = reporteView.get("categoria") != null ? reporteView.get("categoria").toString() : "";
+        String estadoReporte = reporteView.get("estadoreporte") != null ? reporteView.get("estadoreporte").toString() : "Pendiente";
+        String colorEstado = reporteView.get("colorestado") != null ? reporteView.get("colorestado").toString() : "#FFA500";
+        String prioridad = reporteView.get("prioridad") != null ? reporteView.get("prioridad").toString() : "Media";
+        Long nivelnumerico = reporteView.get("nivelnumerico") != null ? ((Number) reporteView.get("nivelnumerico")).longValue() : null;
+        String colonia = reporteView.get("colonia") != null ? reporteView.get("colonia").toString() : "";
+        String municipio = reporteView.get("municipio") != null ? reporteView.get("municipio").toString() : "";
+        String estado = reporteView.get("estado") != null ? reporteView.get("estado").toString() : "";
+        String calle = reporteView.get("calle") != null ? reporteView.get("calle").toString() : "";
+        String referencia = reporteView.get("referencia") != null ? reporteView.get("referencia").toString() : "";
+        Long totalVotos = reporteView.get("totalvotos") != null ? ((Number) reporteView.get("totalvotos")).longValue() : 0;
+        Long totalComentarios = reporteView.get("totalcomentarios") != null ? ((Number) reporteView.get("totalcomentarios")).longValue() : 0;
+
+        // Panel principal de la tarjeta
+        JPanel tarjeta = new JPanel();
+        tarjeta.setLayout(new BorderLayout());
+        tarjeta.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+        tarjeta.setMaximumSize(new Dimension(900, 440));
         tarjeta.setBackground(Color.WHITE);
 
         // Barra de color según estado
@@ -652,7 +1081,7 @@ public class Reportes extends JFrame {
 
         // Línea 2: Estado y prioridad
         JLabel lblEstadoPrioridad = new JLabel(
-                "<html>Estado del reporte: <span style='color:" + colorEstado + ";'><b>" + estadoReporte + "</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Prioridad: " + prioridad + "</html>"
+                "<html>Estado del reporte: <span style='color:" + colorEstado + ";'><b>" + estadoReporte + "</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Prioridad: <b>" + prioridad + "</b></html>"
         );
         lblEstadoPrioridad.setFont(new Font("Arial", Font.PLAIN, 12));
         lblEstadoPrioridad.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -786,10 +1215,80 @@ public class Reportes extends JFrame {
             panelEvidencias.add(sinEvidencias);
         }
 
-        // Votos y comentarios
-        JLabel lblVotosComentarios = new JLabel("Total votos: " + totalVotos + "     Total comentarios: " + totalComentarios);
-        lblVotosComentarios.setFont(new Font("Arial", Font.PLAIN, 12));
-        lblVotosComentarios.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // Panel para comentarios y votos
+        JPanel panelSocial = new JPanel();
+        panelSocial.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        panelSocial.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panelSocial.setBackground(Color.WHITE);
+
+        // Botón de votos ❤
+        JButton btnVotar = new JButton("❤");
+        btnVotar.setFocusable(false);
+        btnVotar.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
+        btnVotar.setBorderPainted(false);
+        btnVotar.setContentAreaFilled(false); // botón transparente
+        btnVotar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        // Mi Etiqueta contador de votos
+        JLabel lblVotos = new JLabel(String.valueOf(totalVotos));
+        lblVotos.setFont(new Font("Arial", Font.PLAIN, 12));
+
+        // Verificar si el usuario ya votó este reporte
+        boolean yaVotoEsteReporte = reportesVotadosPorUsuario.contains(idReporte);
+
+        // ⭐ CREAR EL MAPA CON TODOS LOS DATOS NECESARIOS
+        Map<String, Object> reporteConvertido = new java.util.HashMap<>();
+        reporteConvertido.put("idreporte", idReporte);
+        reporteConvertido.put("totalvotos", totalVotos);
+        // llenar el dato con el dato real de si ya votó
+        reporteConvertido.put("yaVoto", yaVotoEsteReporte); // Estado inicial: no ha votado
+        reporteConvertido.put("reporteView", reporteView);
+
+        // Agregar a la lista ANTES de crear el ActionListener
+        itemsVisibles.add(new ItemReporte(reporteConvertido, lblVotos));
+        final int index = itemsVisibles.size() - 1;
+
+        // ⭐ ESTABLECER EL COLOR INICIAL DEL BOTÓN SEGÚN EL ESTADO
+        if (yaVotoEsteReporte) {
+            btnVotar.setForeground(Color.RED);
+        } else {
+            btnVotar.setForeground(Color.BLACK);
+        }
+
+        // ⭐ MEJORAR EL ACTION LISTENER
+        btnVotar.addActionListener(e -> {
+            ItemReporte item = itemsVisibles.get(index);
+            boolean yaVoto = (boolean) item.getData().getOrDefault("yaVoto", false);
+
+            if (yaVoto) {
+                // Ya votó, ahora quita el voto
+                quitarVoto(index);
+                btnVotar.setForeground(Color.BLACK);
+            } else {
+                // No ha votado, agregar voto
+                votar(index);
+                btnVotar.setForeground(Color.RED);
+            }
+        });
+
+        // Botón de comentarios 💬
+        JButton btnComentarios = new JButton("💬");
+        btnComentarios.setFocusable(false);
+        btnComentarios.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
+        btnComentarios.setBorderPainted(false);
+        btnComentarios.setContentAreaFilled(false);
+        btnComentarios.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        // Etiqueta contador de comentarios
+        JLabel lblComentarios = new JLabel(String.valueOf(totalComentarios));
+        lblComentarios.setFont(new Font("Arial", Font.PLAIN, 12));
+
+        // Agregar componentes al panel
+        panelSocial.add(btnVotar);
+        panelSocial.add(lblVotos);
+        panelSocial.add(Box.createHorizontalStrut(15)); // espacio entre secciones
+        panelSocial.add(btnComentarios);
+        panelSocial.add(lblComentarios);
 
         // Agregar componentes al contenido
         contenido.add(lblCreadorFecha);
@@ -807,12 +1306,122 @@ public class Reportes extends JFrame {
         contenido.add(lblEvidencia);
         contenido.add(panelEvidencias);
         contenido.add(Box.createRigidArea(new Dimension(0, 10)));
-        contenido.add(lblVotosComentarios);
+        contenido.add(panelSocial);
 
         tarjeta.add(contenido, BorderLayout.CENTER);
 
         return tarjeta;
     }
+*/
+    private void actualizarVotoEnPantalla(int index) {
+        ItemReporte item = itemsVisibles.get(index);
+
+        int votosActuales = Integer.parseInt(item.getLblVotos().getText());
+        item.getLblVotos().setText(String.valueOf(votosActuales + 1));
+
+        item.getData().put("votos", votosActuales + 1);
+
+        item.getLblVotos().repaint();
+    }
+
+    private void votar(int index) {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ItemReporte item = itemsVisibles.get(index);
+                Map<String, Object> reporte = item.getData();
+
+                Object idObj = reporte.get("idreporte");
+                if (idObj == null) {
+                    System.err.println("Error: No se encontró idreporte en el mapa");
+                    return;
+                }
+
+                Long idReporte = ((Number) idObj).longValue();
+
+                ApiResponse<?> response = api.votarReporte(idReporte, usuarioLogueado.getIdusuario());
+
+                if ("OK".equals(response.getStatus())) {
+                    SwingUtilities.invokeLater(() -> {
+                        // Actualizar el contador visualmente
+                        long votosActuales = ((Number) reporte.get("totalvotos")).longValue();
+                        long nuevosVotos = votosActuales + 1;
+
+                        item.getLblVotos().setText(String.valueOf(nuevosVotos));
+
+                        // Actualizar el estado en el mapa
+                        reporte.put("totalvotos", nuevosVotos);
+                        reporte.put("yaVoto", true);
+
+                        reportesVotadosPorUsuario.add(idReporte);
+
+                        // Forzar repaint
+                        item.getLblVotos().getParent().revalidate();
+                        item.getLblVotos().getParent().repaint();
+                    });
+                } else {
+                    System.err.println("Error al votar: " + response.getMensaje());
+                    SwingUtilities.invokeLater(() ->
+                            JOptionPane.showMessageDialog(this,
+                                    "Error al votar: " + response.getMensaje(),
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE)
+                    );
+                }
+
+            } catch (Exception ex) {
+                System.err.println("Error al votar: " + ex.getMessage());
+                System.out.println(ex.getMessage());
+            }
+        }).start();
+    }
+
+    private void quitarVoto(int index) {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ItemReporte item = itemsVisibles.get(index);
+                Map<String, Object> reporte = item.getData();
+
+                Object idObj = reporte.get("idreporte");
+                if (idObj == null) {
+                    System.err.println("Error: No se encontró idreporte en el mapa");
+                    return;
+                }
+
+                Long idReporte = ((Number) idObj).longValue();
+
+                ApiResponse<?> response = api.quitarVotoReporte(idReporte, usuarioLogueado.getIdusuario());
+
+                if ("OK".equals(response.getStatus())) {
+                    SwingUtilities.invokeLater(() -> {
+                        // Actualizar el contador visualmente
+                        long votosActuales = ((Number) reporte.get("totalvotos")).longValue();
+                        long nuevosVotos = Math.max(0, votosActuales - 1); // No permitir negativos
+
+                        item.getLblVotos().setText(String.valueOf(nuevosVotos));
+
+                        // Actualizar el estado en el mapa
+                        reporte.put("totalvotos", nuevosVotos);
+                        reporte.put("yaVoto", false);
+
+                        reportesVotadosPorUsuario.remove(idReporte);
+
+                        // Forzar repaint
+                        item.getLblVotos().getParent().revalidate();
+                        item.getLblVotos().getParent().repaint();
+                    });
+                } else {
+                    System.err.println("Error al quitar voto: " + response.getMensaje());
+                }
+
+            } catch (Exception ex) {
+                System.err.println("Error al quitar voto: " + ex.getMessage());
+                System.out.println(ex.getMessage());
+            }
+        }).start();
+    }
+
 
     private void mostrarImagenGrande(BufferedImage imagenOriginal, JLabel labelOrigen) {
         // Crear un JDialog modal
