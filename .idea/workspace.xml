@@ -5,6 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1f6023ce-b786-41f8-a506-a31e3b556676" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Reportes.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Reportes.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -33,31 +34,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Application.CambiarContrasena.executor": "Run",
-    "Application.CiviConnect-Client.executor": "Run",
-    "Application.Index.executor": "Run",
-    "Application.Login.executor": "Run",
-    "Application.Login2.executor": "Run",
-    "Application.LoginForm.executor": "Run",
-    "Application.Main.executor": "Run",
-    "Application.Registro.executor": "Run",
-    "Application.Reportes.executor": "Run",
-    "Application.index.executor": "Run",
-    "Application.testForm.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "C:/code/intellij/civiconnect-client/src/main/java/com/vectorgarman/dto",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.editor.code.editing"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.CambiarContrasena.executor&quot;: &quot;Run&quot;,
+    &quot;Application.CiviConnect-Client.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Index.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Login.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Login2.executor&quot;: &quot;Run&quot;,
+    &quot;Application.LoginForm.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Registro.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Reportes.executor&quot;: &quot;Run&quot;,
+    &quot;Application.index.executor&quot;: &quot;Run&quot;,
+    &quot;Application.testForm.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/code/intellij/civiconnect-client/src/main/java/com/vectorgarman/dto&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.editor.code.editing&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\code\intellij\civiconnect-client\src\main\java\com\vectorgarman\dto" />

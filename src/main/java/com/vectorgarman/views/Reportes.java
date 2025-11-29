@@ -458,7 +458,6 @@ public class Reportes extends JFrame {
         }
     }
 
-    // TODO: Falta que se filtren los reportes por la ubicacion que este puesta en los combobox
     private void cargarReportes() {
         new Thread(() -> {
             try {
@@ -619,6 +618,7 @@ public class Reportes extends JFrame {
         String prioridad = reporteView.get("prioridad") != null ? reporteView.get("prioridad").toString() : "Media";
         String titulo = reporteView.get("titulo") != null ? reporteView.get("titulo").toString() : "Sin título";
         String descripcion = reporteView.get("descripcion") != null ? reporteView.get("descripcion").toString() : "";
+        String solucionpropuesta = reporteView.get("solucionpropuesta") != null ? reporteView.get("solucionpropuesta").toString() : "";
         Long totalVotos = reporteView.get("totalvotos") != null ? ((Number) reporteView.get("totalvotos")).longValue() : 0;
         Long totalComentarios = reporteView.get("totalcomentarios") != null ? ((Number) reporteView.get("totalcomentarios")).longValue() : 0;
 
@@ -626,7 +626,7 @@ public class Reportes extends JFrame {
         JPanel tarjeta = new JPanel();
         tarjeta.setLayout(new BorderLayout());
         tarjeta.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
-        tarjeta.setMaximumSize(new Dimension(900, 350));
+        tarjeta.setMaximumSize(new Dimension(900, 420));
         tarjeta.setBackground(Color.WHITE);
 
         // Barra de color según estado
@@ -659,7 +659,8 @@ public class Reportes extends JFrame {
 
         // Título del reporte
         JLabel lblTitulo = new JLabel(titulo);
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 14));
+        lblTitulo.setFont(new Font("Arial", Font.BOLD, 16));
+        lblTitulo.setForeground(new Color(20, 20, 20)); // Negro elegante
         lblTitulo.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // Descripción
@@ -669,12 +670,38 @@ public class Reportes extends JFrame {
         txtDescripcion.setEditable(false);
         txtDescripcion.setFont(new Font("Arial", Font.PLAIN, 12));
         txtDescripcion.setBackground(Color.WHITE);
-        txtDescripcion.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.BLACK, 1),
-                BorderFactory.createEmptyBorder(10, 10, 10, 10)  // top, left, bottom, right
-        ));
-        txtDescripcion.setMaximumSize(new Dimension(850, 80));
-        txtDescripcion.setAlignmentX(Component.LEFT_ALIGNMENT);
+        txtDescripcion.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Borde solo interior
+
+        // ScrollPane para descripción
+        JScrollPane scrollDescripcion = new JScrollPane(txtDescripcion);
+        scrollDescripcion.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
+        scrollDescripcion.setPreferredSize(new Dimension(850, 50)); // Tamaño fijo visible
+        scrollDescripcion.setAlignmentX(Component.LEFT_ALIGNMENT);
+        scrollDescripcion.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollDescripcion.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        // Etiqueta Solución propuesta
+        JLabel lblSolucionpropuesta = new JLabel("Solución propuesta:");
+        lblSolucionpropuesta.setFont(new Font("Arial", Font.BOLD, 14));
+        lblSolucionpropuesta.setForeground(new Color(0, 102, 204)); // Azul distintivo
+        lblSolucionpropuesta.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Solución propuesta
+        JTextArea txtSolucionpropuesta = new JTextArea(solucionpropuesta);
+        txtSolucionpropuesta.setLineWrap(true);
+        txtSolucionpropuesta.setWrapStyleWord(true);
+        txtSolucionpropuesta.setEditable(false);
+        txtSolucionpropuesta.setFont(new Font("Arial", Font.PLAIN, 12));
+        txtSolucionpropuesta.setBackground(new Color(245, 245, 245));
+        txtSolucionpropuesta.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // ScrollPane para solución propuesta
+        JScrollPane scrollSolucion = new JScrollPane(txtSolucionpropuesta);
+        scrollSolucion.setBorder(BorderFactory.createDashedBorder(Color.GRAY));
+        scrollSolucion.setPreferredSize(new Dimension(850, 50));
+        scrollSolucion.setAlignmentX(Component.LEFT_ALIGNMENT);
+        scrollSolucion.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollSolucion.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
         // Evidencia
         JLabel lblEvidencia = new JLabel("Evidencia:");
@@ -771,7 +798,11 @@ public class Reportes extends JFrame {
         contenido.add(Box.createRigidArea(new Dimension(0, 10)));
         contenido.add(lblTitulo);
         contenido.add(Box.createRigidArea(new Dimension(0, 5)));
-        contenido.add(txtDescripcion);
+        contenido.add(scrollDescripcion);
+        contenido.add(Box.createRigidArea(new Dimension(0, 10)));
+        contenido.add(lblSolucionpropuesta);
+        contenido.add(Box.createRigidArea(new Dimension(0, 5)));
+        contenido.add(scrollSolucion);
         contenido.add(Box.createRigidArea(new Dimension(0, 10)));
         contenido.add(lblEvidencia);
         contenido.add(panelEvidencias);
