@@ -561,6 +561,49 @@ public class Reportes extends JFrame {
         return mapaMutable;
     }
 
+    // ============================================
+    // ACTUALIZAR REPORTE EN LISTA LOCAL
+    // ============================================
+    private void actualizarReporteEnLista(Long idReporte, Map<?, ?> reporteActualizado) {
+        // Buscar el reporte en todosLosReportes y actualizarlo
+        for (int i = 0; i < todosLosReportes.size(); i++) {
+            Map<?, ?> reporteMap = todosLosReportes.get(i);
+            if (reporteMap instanceof Map) {
+                Map<String, Object> reporteMutable = (Map<String, Object>) reporteMap;
+                Map<?, ?> reporteView = reporteMutable.get("reporteView") instanceof Map
+                        ? (Map<?, ?>) reporteMutable.get("reporteView")
+                        : null;
+
+                if (reporteView instanceof Map) {
+                    Map<String, Object> reporteViewMutable = (Map<String, Object>) reporteView;
+                    Long idReporteActual = reporteViewMutable.get("idreporte") != null
+                            ? ((Number) reporteViewMutable.get("idreporte")).longValue()
+                            : null;
+
+                    if (idReporteActual != null && idReporteActual.equals(idReporte)) {
+                        // Convertir el reporte actualizado a mutable
+                        Map<String, Object> nuevoReporteMutable = convertirAMapaMutable(reporteActualizado);
+                        
+                        // Reemplazar el reporte en la lista
+                        todosLosReportes.set(i, nuevoReporteMutable);
+                        
+                        System.out.println("✅ Reporte actualizado en lista local: ID=" + idReporte);
+                        
+                        // Verificar si tiene fechaactualizacion
+                        Map<?, ?> nuevoReporteView = nuevoReporteMutable.get("reporteView") instanceof Map
+                                ? (Map<?, ?>) nuevoReporteMutable.get("reporteView")
+                                : null;
+                        if (nuevoReporteView != null) {
+                            Object fechaActualizacion = nuevoReporteView.get("fechaactualizacion");
+                            System.out.println("📅 Fecha de actualización: " + fechaActualizacion);
+                        }
+                        
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
     private void aplicarFiltrosYMostrar() {
         // Obtener los valores seleccionados en los combobox
@@ -909,6 +952,24 @@ public class Reportes extends JFrame {
         panelSocial.add(Box.createHorizontalStrut(15));
         panelSocial.add(btnComentarios);
         panelSocial.add(btnCrearComentario);
+
+        // Botón de editar (solo si el reporte es del usuario logueado)
+        if (idusuariocreador != null && idusuariocreador.equals(usuarioLogueado.getIdusuario())) {
+            JButton btnEditar = new JButton("✏️ Editar");
+            btnEditar.setFocusable(false);
+            btnEditar.setFont(new Font("Arial", Font.PLAIN, 12));
+            btnEditar.setForeground(new Color(255, 140, 0)); // Naranja
+            btnEditar.setBorderPainted(false);
+            btnEditar.setContentAreaFilled(false);
+            btnEditar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+            btnEditar.addActionListener(e -> {
+                abrirVentanaEditarReporte(reporteMap);
+            });
+
+            panelSocial.add(Box.createHorizontalStrut(10));
+            panelSocial.add(btnEditar);
+        }
 
         // Agregar componentes a columna izquierda
         columnaIzquierda.add(lblCreadorFecha);
@@ -3250,5 +3311,734 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                                 JOptionPane.ERROR_MESSAGE));
             }
         }).start();
+    }
+
+    // ============================================
+    // ABRIR VENTANA EDITAR REPORTE
+    // ============================================
+    private void abrirVentanaEditarReporte(Map<?, ?> reporteMap) {
+        // Extraer datos del reporte
+        Map<?, ?> reporteView = reporteMap.get("reporteView") instanceof Map ? (Map<?, ?>) reporteMap.get("reporteView") : null;
+        if (reporteView == null) {
+            JOptionPane.showMessageDialog(this, "Error: No se pudo cargar el reporte", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        Long idReporte = reporteView.get("idreporte") != null ? ((Number) reporteView.get("idreporte")).longValue() : null;
+        String tituloActual = reporteView.get("titulo") != null ? reporteView.get("titulo").toString() : "";
+        String descripcionActual = reporteView.get("descripcion") != null ? reporteView.get("descripcion").toString() : "";
+        String solucionActual = reporteView.get("solucionpropuesta") != null ? reporteView.get("solucionpropuesta").toString() : "";
+        String calleActual = reporteView.get("calle") != null ? reporteView.get("calle").toString() : "";
+        String referenciaActual = reporteView.get("referencia") != null ? reporteView.get("referencia").toString() : "";
+        String categoriaActual = reporteView.get("categoria") != null ? reporteView.get("categoria").toString() : "";
+        String estadoReporteActual = reporteView.get("estadoreporte") != null ? reporteView.get("estadoreporte").toString() : "";
+        String prioridadActual = reporteView.get("prioridad") != null ? reporteView.get("prioridad").toString() : "";
+        String coloniaActual = reporteView.get("colonia") != null ? reporteView.get("colonia").toString() : "";
+        String municipioActual = reporteView.get("municipio") != null ? reporteView.get("municipio").toString() : "";
+        String estadoActual = reporteView.get("estado") != null ? reporteView.get("estado").toString() : "";
+
+        JDialog ventanaEditar = new JDialog(this, "Editar Reporte #" + idReporte, true);
+        ventanaEditar.setSize(950, 750);
+        ventanaEditar.setLocationRelativeTo(this);
+        ventanaEditar.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+        // Panel principal con scroll
+        JPanel panelPrincipal = new JPanel();
+        panelPrincipal.setLayout(new BoxLayout(panelPrincipal, BoxLayout.Y_AXIS));
+        panelPrincipal.setBackground(new Color(245, 245, 245));
+        panelPrincipal.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // ========== TARJETA ESTILO REPORTE ==========
+        JPanel tarjeta = new JPanel();
+        tarjeta.setLayout(new BorderLayout());
+        tarjeta.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+        tarjeta.setMaximumSize(new Dimension(900, Integer.MAX_VALUE));
+        tarjeta.setBackground(Color.WHITE);
+        tarjeta.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Barra de color superior (se actualizará según el estado seleccionado)
+        JPanel barraColor = new JPanel();
+        barraColor.setPreferredSize(new Dimension(900, 30));
+        String colorEstadoActual = reporteView.get("colorestado") != null ? reporteView.get("colorestado").toString() : "#FFA500";
+        try {
+            barraColor.setBackground(Color.decode(colorEstadoActual));
+        } catch (Exception e) {
+            barraColor.setBackground(new Color(255, 165, 0));
+        }
+        tarjeta.add(barraColor, BorderLayout.NORTH);
+
+        // Panel principal con dos columnas
+        JPanel contenidoPrincipal = new JPanel(new BorderLayout(10, 0));
+        contenidoPrincipal.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        contenidoPrincipal.setBackground(Color.WHITE);
+
+        // ========== COLUMNA IZQUIERDA (CONTENIDO EDITABLE) ==========
+        JPanel columnaIzquierda = new JPanel();
+        columnaIzquierda.setLayout(new BoxLayout(columnaIzquierda, BoxLayout.Y_AXIS));
+        columnaIzquierda.setBackground(Color.WHITE);
+
+        // Línea 1: Usuario y fecha (solo lectura)
+        String nombreUsuario = usuarioLogueado.getNombreusuario() != null ? usuarioLogueado.getNombreusuario() : "Usuario";
+        String fechaCreacion = reporteView.get("fechacreacion") != null ? reporteView.get("fechacreacion").toString() : "";
+        JLabel lblCreadorFecha = new JLabel("@ " + nombreUsuario + " • " + fechaCreacion);
+        lblCreadorFecha.setFont(new Font("Arial", Font.BOLD, 13));
+        lblCreadorFecha.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Línea 2: Estado y prioridad (AMBOS EDITABLES)
+        JPanel panelEstadoPrioridad = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        panelEstadoPrioridad.setBackground(Color.WHITE);
+        panelEstadoPrioridad.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        JLabel lblEstadoLabel = new JLabel("Estado: ");
+        lblEstadoLabel.setFont(new Font("Arial", Font.PLAIN, 13));
+        
+        // ⭐ DIFERENCIA CLAVE: ComboBox editable para el estado
+        JComboBox<Map<?, ?>> comboEstadoReporte = new JComboBox<>();
+        comboEstadoReporte.setFont(new Font("Arial", Font.BOLD, 13));
+        comboEstadoReporte.setPreferredSize(new Dimension(120, 25));
+        
+        JLabel lblSeparador1 = new JLabel("  •  ");
+        lblSeparador1.setFont(new Font("Arial", Font.PLAIN, 13));
+        
+        JLabel lblPrioridadLabel = new JLabel("Prioridad: ");
+        lblPrioridadLabel.setFont(new Font("Arial", Font.PLAIN, 13));
+        
+        JComboBox<Map<?, ?>> comboNivelPrioridad = new JComboBox<>();
+        comboNivelPrioridad.setFont(new Font("Arial", Font.BOLD, 13));
+        comboNivelPrioridad.setPreferredSize(new Dimension(120, 25));
+        
+        panelEstadoPrioridad.add(lblEstadoLabel);
+        panelEstadoPrioridad.add(comboEstadoReporte);
+        panelEstadoPrioridad.add(lblSeparador1);
+        panelEstadoPrioridad.add(lblPrioridadLabel);
+        panelEstadoPrioridad.add(comboNivelPrioridad);
+
+        // Listener para actualizar el color de la barra cuando cambia el estado
+        comboEstadoReporte.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED && comboEstadoReporte.getSelectedItem() != null) {
+                Map<?, ?> estadoSel = (Map<?, ?>) comboEstadoReporte.getSelectedItem();
+                String color = estadoSel.get("color") != null ? estadoSel.get("color").toString() : "#FFA500";
+                try {
+                    barraColor.setBackground(Color.decode(color));
+                } catch (Exception ex) {
+                    barraColor.setBackground(new Color(255, 165, 0));
+                }
+            }
+        });
+
+        // Label para el título
+        JLabel lblTituloLabel = new JLabel("Título *");
+        lblTituloLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        lblTituloLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Título del reporte (editable)
+        JTextField txtTitulo = new JTextField(tituloActual);
+        txtTitulo.setFont(new Font("Arial", Font.BOLD, 13));
+        txtTitulo.setForeground(new Color(20, 20, 20));
+        txtTitulo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        txtTitulo.setAlignmentX(Component.LEFT_ALIGNMENT);
+        txtTitulo.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.GRAY, 1),
+            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+
+        // Label para la descripción
+        JLabel lblDescripcionLabel = new JLabel("Descripción *");
+        lblDescripcionLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        lblDescripcionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Descripción (editable)
+        JTextArea txtDescripcion = new JTextArea(descripcionActual, 3, 20);
+        txtDescripcion.setLineWrap(true);
+        txtDescripcion.setWrapStyleWord(true);
+        txtDescripcion.setFont(new Font("Arial", Font.PLAIN, 11));
+        txtDescripcion.setBackground(Color.WHITE);
+        txtDescripcion.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        JScrollPane scrollDescripcion = new JScrollPane(txtDescripcion);
+        scrollDescripcion.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
+        scrollDescripcion.setPreferredSize(new Dimension(520, 60));
+        scrollDescripcion.setAlignmentX(Component.LEFT_ALIGNMENT);
+        scrollDescripcion.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollDescripcion.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        // Solución propuesta (editable)
+        JLabel lblSolucionpropuesta = new JLabel("Solución propuesta:");
+        lblSolucionpropuesta.setFont(new Font("Arial", Font.BOLD, 13));
+        lblSolucionpropuesta.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JTextArea txtSolucionPropuesta = new JTextArea(solucionActual, 3, 20);
+        txtSolucionPropuesta.setLineWrap(true);
+        txtSolucionPropuesta.setWrapStyleWord(true);
+        txtSolucionPropuesta.setFont(new Font("Arial", Font.PLAIN, 11));
+        txtSolucionPropuesta.setBackground(new Color(245, 245, 245));
+        txtSolucionPropuesta.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        JScrollPane scrollSolucion = new JScrollPane(txtSolucionPropuesta);
+        scrollSolucion.setBorder(BorderFactory.createDashedBorder(Color.GRAY));
+        scrollSolucion.setPreferredSize(new Dimension(520, 60));
+        scrollSolucion.setAlignmentX(Component.LEFT_ALIGNMENT);
+        scrollSolucion.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollSolucion.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        // Evidencia (gestión de archivos existentes y nuevos)
+        JLabel lblEvidencia = new JLabel("Evidencia:");
+        lblEvidencia.setFont(new Font("Arial", Font.BOLD, 13));
+        lblEvidencia.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JPanel panelEvidencias = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 5));
+        panelEvidencias.setBackground(Color.WHITE);
+        panelEvidencias.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Comboboxes para ubicación
+        JComboBox<Map<?, ?>> comboEstadoUbic = new JComboBox<>();
+        JComboBox<Map<?, ?>> comboMunicipioUbic = new JComboBox<>();
+        JComboBox<Map<?, ?>> comboColoniaUbic = new JComboBox<>();
+        JComboBox<Map<?, ?>> comboCategoriaReporte = new JComboBox<>();
+        JTextField txtCalle = new JTextField(calleActual);
+        JTextField txtReferencia = new JTextField(referenciaActual);
+
+        // Listas para gestionar evidencias
+        java.util.List<Long> evidenciasAEliminar = new ArrayList<>();
+        java.util.List<java.io.File> nuevosArchivos = new ArrayList<>();
+        
+        // Cargar evidencias existentes
+        Object evidenciasObj = reporteMap.get("evidencias");
+        java.util.List<Map<?, ?>> evidenciasExistentes = new ArrayList<>();
+        if (evidenciasObj instanceof List<?> evidencias) {
+            for (Object item : evidencias) {
+                if (item instanceof Map<?, ?>) {
+                    evidenciasExistentes.add((Map<?, ?>) item);
+                }
+            }
+        }
+
+        // Mostrar evidencias existentes
+        for (Map<?, ?> evidencia : evidenciasExistentes) {
+            try {
+                Object archivoObj = evidencia.get("archivo");
+                Long idEvidencia = evidencia.get("idevidencia") != null ? ((Number) evidencia.get("idevidencia")).longValue() : null;
+                
+                if (archivoObj != null && idEvidencia != null) {
+                    String base64String = archivoObj.toString();
+                    byte[] bytesImagen = java.util.Base64.getDecoder().decode(base64String);
+                    java.io.InputStream in = new java.io.ByteArrayInputStream(bytesImagen);
+                    BufferedImage image = javax.imageio.ImageIO.read(in);
+
+                    if (image != null) {
+                        Image scaledImage = image.getScaledInstance(120, 80, Image.SCALE_SMOOTH);
+                        
+                        JPanel panelImagen = new JPanel(new BorderLayout());
+                        panelImagen.setPreferredSize(new Dimension(120, 100));
+                        
+                        JLabel lblImagen = new JLabel(new ImageIcon(scaledImage));
+                        lblImagen.setPreferredSize(new Dimension(120, 80));
+                        lblImagen.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+                        
+                        JButton btnEliminar = new JButton("❌");
+                        btnEliminar.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 10));
+                        btnEliminar.setPreferredSize(new Dimension(120, 20));
+                        btnEliminar.setFocusPainted(false);
+                        btnEliminar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                        
+                        btnEliminar.addActionListener(e -> {
+                            evidenciasAEliminar.add(idEvidencia);
+                            panelEvidencias.remove(panelImagen);
+                            panelEvidencias.revalidate();
+                            panelEvidencias.repaint();
+                        });
+                        
+                        panelImagen.add(lblImagen, BorderLayout.CENTER);
+                        panelImagen.add(btnEliminar, BorderLayout.SOUTH);
+                        panelEvidencias.add(panelImagen);
+                    }
+                }
+            } catch (Exception ex) {
+                System.err.println("Error al cargar evidencia: " + ex.getMessage());
+            }
+        }
+
+        JButton btnAgregarArchivos = new JButton("📎 Agregar Imágenes");
+        btnAgregarArchivos.setFont(new Font("Arial", Font.PLAIN, 12));
+        btnAgregarArchivos.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnAgregarArchivos.setPreferredSize(new Dimension(180, 30));
+        
+        JLabel lblNuevosArchivos = new JLabel("0 nuevos");
+        lblNuevosArchivos.setFont(new Font("Arial", Font.ITALIC, 11));
+        lblNuevosArchivos.setForeground(Color.GRAY);
+
+        btnAgregarArchivos.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setMultiSelectionEnabled(true);
+            fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                    "Imágenes (JPG, PNG, JPEG)", "jpg", "jpeg", "png"));
+
+            int resultado = fileChooser.showOpenDialog(ventanaEditar);
+            if (resultado == JFileChooser.APPROVE_OPTION) {
+                java.io.File[] archivos = fileChooser.getSelectedFiles();
+                nuevosArchivos.addAll(Arrays.asList(archivos));
+                
+                lblNuevosArchivos.setText(nuevosArchivos.size() + " nuevo(s)");
+                lblNuevosArchivos.setForeground(new Color(25, 135, 84));
+                
+                // Mostrar miniaturas de nuevos archivos
+                for (java.io.File archivo : archivos) {
+                    try {
+                        BufferedImage img = javax.imageio.ImageIO.read(archivo);
+                        if (img != null) {
+                            Image scaledImg = img.getScaledInstance(120, 80, Image.SCALE_SMOOTH);
+                            
+                            JPanel panelImagen = new JPanel(new BorderLayout());
+                            panelImagen.setPreferredSize(new Dimension(120, 100));
+                            
+                            JLabel lblImg = new JLabel(new ImageIcon(scaledImg));
+                            lblImg.setPreferredSize(new Dimension(120, 80));
+                            lblImg.setBorder(BorderFactory.createLineBorder(new Color(25, 135, 84), 2));
+                            
+                            JLabel lblNuevo = new JLabel("NUEVO", SwingConstants.CENTER);
+                            lblNuevo.setFont(new Font("Arial", Font.BOLD, 10));
+                            lblNuevo.setForeground(new Color(25, 135, 84));
+                            lblNuevo.setPreferredSize(new Dimension(120, 20));
+                            
+                            panelImagen.add(lblImg, BorderLayout.CENTER);
+                            panelImagen.add(lblNuevo, BorderLayout.SOUTH);
+                            panelEvidencias.add(panelImagen);
+                        }
+                    } catch (Exception ex) {
+                        System.err.println("Error al cargar imagen: " + ex.getMessage());
+                    }
+                }
+                panelEvidencias.revalidate();
+                panelEvidencias.repaint();
+            }
+        });
+        
+        JPanel panelBtnEvidencia = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        panelBtnEvidencia.setBackground(Color.WHITE);
+        panelBtnEvidencia.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panelBtnEvidencia.add(btnAgregarArchivos);
+        panelBtnEvidencia.add(lblNuevosArchivos);
+
+        // Agregar componentes a columna izquierda
+        columnaIzquierda.add(lblCreadorFecha);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 5)));
+        columnaIzquierda.add(panelEstadoPrioridad);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 8)));
+        columnaIzquierda.add(lblTituloLabel);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 3)));
+        columnaIzquierda.add(txtTitulo);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 8)));
+        columnaIzquierda.add(lblDescripcionLabel);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 3)));
+        columnaIzquierda.add(scrollDescripcion);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 8)));
+        columnaIzquierda.add(lblSolucionpropuesta);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 5)));
+        columnaIzquierda.add(scrollSolucion);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 8)));
+        columnaIzquierda.add(lblEvidencia);
+        columnaIzquierda.add(panelEvidencias);
+        columnaIzquierda.add(Box.createRigidArea(new Dimension(0, 5)));
+        columnaIzquierda.add(panelBtnEvidencia);
+
+        // ========== COLUMNA DERECHA (INFORMACIÓN EXTRA EDITABLE) ==========
+        JPanel columnaDerecha = new JPanel();
+        columnaDerecha.setLayout(new BoxLayout(columnaDerecha, BoxLayout.Y_AXIS));
+        columnaDerecha.setBackground(new Color(248, 249, 250));
+        columnaDerecha.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 220, 220), 1),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        ));
+        columnaDerecha.setPreferredSize(new Dimension(280, 0));
+
+        // Título de la sección
+        JLabel lblInfoAdicional = new JLabel("Información del reporte");
+        lblInfoAdicional.setFont(new Font("Arial", Font.BOLD, 13));
+        lblInfoAdicional.setForeground(new Color(50, 50, 50));
+        lblInfoAdicional.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JSeparator separador = new JSeparator();
+        separador.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+
+        columnaDerecha.add(lblInfoAdicional);
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 5)));
+        columnaDerecha.add(separador);
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Configurar comboboxes con renderer personalizado
+        DefaultListCellRenderer renderer = new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Map<?, ?> map) {
+                    Object nombre = map.get("nombre");
+                    setText(nombre != null ? nombre.toString() : "");
+                }
+                return this;
+            }
+        };
+
+        comboEstadoUbic.setRenderer(renderer);
+        comboMunicipioUbic.setRenderer(renderer);
+        comboColoniaUbic.setRenderer(renderer);
+        comboCategoriaReporte.setRenderer(renderer);
+        comboNivelPrioridad.setRenderer(renderer);
+        comboEstadoReporte.setRenderer(renderer);
+
+        comboMunicipioUbic.setEnabled(false);
+        comboColoniaUbic.setEnabled(false);
+
+        // Categoría
+        JLabel lblCategoriaLabel = new JLabel("Categoría *");
+        lblCategoriaLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        lblCategoriaLabel.setForeground(new Color(100, 100, 100));
+        lblCategoriaLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        comboCategoriaReporte.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+        comboCategoriaReporte.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        columnaDerecha.add(lblCategoriaLabel);
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 3)));
+        columnaDerecha.add(comboCategoriaReporte);
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Estado
+        JLabel lblEstadoUbicLabel = new JLabel("Estado *");
+        lblEstadoUbicLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        lblEstadoUbicLabel.setForeground(new Color(100, 100, 100));
+        lblEstadoUbicLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        comboEstadoUbic.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+        comboEstadoUbic.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        columnaDerecha.add(lblEstadoUbicLabel);
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 3)));
+        columnaDerecha.add(comboEstadoUbic);
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Municipio
+        JLabel lblMunicipioLabel = new JLabel("Municipio *");
+        lblMunicipioLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        lblMunicipioLabel.setForeground(new Color(100, 100, 100));
+        lblMunicipioLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        comboMunicipioUbic.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+        comboMunicipioUbic.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        columnaDerecha.add(lblMunicipioLabel);
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 3)));
+        columnaDerecha.add(comboMunicipioUbic);
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Colonia
+        JLabel lblColoniaLabel = new JLabel("Colonia *");
+        lblColoniaLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        lblColoniaLabel.setForeground(new Color(100, 100, 100));
+        lblColoniaLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        comboColoniaUbic.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+        comboColoniaUbic.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        columnaDerecha.add(lblColoniaLabel);
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 3)));
+        columnaDerecha.add(comboColoniaUbic);
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Calle
+        JLabel lblCalleLabel = new JLabel("Calle *");
+        lblCalleLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        lblCalleLabel.setForeground(new Color(100, 100, 100));
+        lblCalleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        txtCalle.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+        txtCalle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        txtCalle.setFont(new Font("Arial", Font.PLAIN, 11));
+        
+        columnaDerecha.add(lblCalleLabel);
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 3)));
+        columnaDerecha.add(txtCalle);
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Referencia
+        JLabel lblReferenciaLabel = new JLabel("Referencia");
+        lblReferenciaLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        lblReferenciaLabel.setForeground(new Color(100, 100, 100));
+        lblReferenciaLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        txtReferencia.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+        txtReferencia.setAlignmentX(Component.LEFT_ALIGNMENT);
+        txtReferencia.setFont(new Font("Arial", Font.PLAIN, 11));
+        
+        columnaDerecha.add(lblReferenciaLabel);
+        columnaDerecha.add(Box.createRigidArea(new Dimension(0, 3)));
+        columnaDerecha.add(txtReferencia);
+
+        // Espacio flexible al final
+        columnaDerecha.add(Box.createVerticalGlue());
+
+        contenidoPrincipal.add(columnaIzquierda, BorderLayout.CENTER);
+        contenidoPrincipal.add(columnaDerecha, BorderLayout.EAST);
+
+        tarjeta.add(contenidoPrincipal, BorderLayout.CENTER);
+        
+        panelPrincipal.add(tarjeta);
+        panelPrincipal.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        // Botones
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        panelBotones.setBackground(Color.WHITE);
+        panelBotones.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panelBotones.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
+        JButton btnCancelar = new JButton("Cancelar");
+        btnCancelar.setFont(new Font("Arial", Font.PLAIN, 13));
+        btnCancelar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnCancelar.addActionListener(e -> ventanaEditar.dispose());
+
+        JButton btnGuardar = new JButton("Guardar Cambios");
+        btnGuardar.setFont(new Font("Arial", Font.BOLD, 13));
+        btnGuardar.setBackground(new Color(25, 135, 84));
+        btnGuardar.setForeground(Color.WHITE);
+        btnGuardar.setFocusPainted(false);
+        btnGuardar.setBorderPainted(false);
+        btnGuardar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnGuardar.setPreferredSize(new Dimension(170, 35));
+
+        btnGuardar.addActionListener(e -> {
+            // Validación
+            if (txtTitulo.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(ventanaEditar, "El título es obligatorio", "Campo requerido", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (txtDescripcion.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(ventanaEditar, "La descripción es obligatoria", "Campo requerido", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (txtSolucionPropuesta.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(ventanaEditar, "La solución propuesta es obligatoria", "Campo requerido", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (comboCategoriaReporte.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(ventanaEditar, "Debe seleccionar una categoría", "Campo requerido", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (comboEstadoReporte.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(ventanaEditar, "Debe seleccionar un estado", "Campo requerido", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (comboNivelPrioridad.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(ventanaEditar, "Debe seleccionar un nivel de prioridad", "Campo requerido", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (comboColoniaUbic.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(ventanaEditar, "Debe seleccionar una colonia", "Campo requerido", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (txtCalle.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(ventanaEditar, "La calle es obligatoria", "Campo requerido", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Obtener valores
+            Map<?, ?> categoriaSeleccionada = (Map<?, ?>) comboCategoriaReporte.getSelectedItem();
+            Map<?, ?> estadoReporteSeleccionado = (Map<?, ?>) comboEstadoReporte.getSelectedItem();
+            Map<?, ?> nivelPrioridadSeleccionado = (Map<?, ?>) comboNivelPrioridad.getSelectedItem();
+            Map<?, ?> coloniaSeleccionada = (Map<?, ?>) comboColoniaUbic.getSelectedItem();
+
+            Long idCategoria = ((Number) categoriaSeleccionada.get("idcategoria")).longValue();
+            Long idEstadoReporteNuevo = ((Number) estadoReporteSeleccionado.get("idestadoreporte")).longValue();
+            Long idNivelPrioridad = ((Number) nivelPrioridadSeleccionado.get("idnivelprioridad")).longValue();
+            Long idColonia = ((Number) coloniaSeleccionada.get("idcolonia")).longValue();
+
+            btnGuardar.setEnabled(false);
+            btnGuardar.setText("Guardando...");
+
+            // Enviar actualización
+            new Thread(() -> {
+                try {
+                    ClienteAPI api = new ClienteAPI();
+                    ApiResponse<?> response = api.editarReporte(
+                            idReporte,
+                            usuarioLogueado.getIdusuario(),
+                            idColonia,
+                            idNivelPrioridad,
+                            idEstadoReporteNuevo,
+                            idCategoria,
+                            txtTitulo.getText().trim(),
+                            txtDescripcion.getText().trim(),
+                            txtSolucionPropuesta.getText().trim(),
+                            txtCalle.getText().trim(),
+                            txtReferencia.getText().trim(),
+                            nuevosArchivos,
+                            evidenciasAEliminar
+                    );
+
+                    SwingUtilities.invokeLater(() -> {
+                        if (response != null && response.isSuccess()) {
+                            // ⭐ ACTUALIZAR EL REPORTE LOCALMENTE CON LA RESPUESTA DEL SERVIDOR
+                            Object dataObj = response.getData();
+                            if (dataObj instanceof Map<?, ?> reporteActualizado) {
+                                actualizarReporteEnLista(idReporte, reporteActualizado);
+                            }
+                            
+                            JOptionPane.showMessageDialog(ventanaEditar,
+                                    "Reporte actualizado exitosamente",
+                                    "Éxito",
+                                    JOptionPane.INFORMATION_MESSAGE);
+                            ventanaEditar.dispose();
+                            
+                            // Refrescar la vista con los datos actualizados
+                            aplicarFiltrosYMostrar();
+                        } else {
+                            btnGuardar.setEnabled(true);
+                            btnGuardar.setText("Guardar Cambios");
+                            JOptionPane.showMessageDialog(ventanaEditar,
+                                    "Error al actualizar el reporte: " + (response != null ? response.getMensaje() : "Error desconocido"),
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE);
+                        }
+                    });
+                } catch (Exception ex) {
+                    SwingUtilities.invokeLater(() -> {
+                        btnGuardar.setEnabled(true);
+                        btnGuardar.setText("Guardar Cambios");
+                        JOptionPane.showMessageDialog(ventanaEditar,
+                                "Error al conectar con el servidor: " + ex.getMessage(),
+                                "Error de Conexión",
+                                JOptionPane.ERROR_MESSAGE);
+                    });
+                }
+            }).start();
+        });
+
+        panelBotones.add(btnCancelar);
+        panelBotones.add(btnGuardar);
+        panelPrincipal.add(panelBotones);
+
+        // Scroll
+        JScrollPane scrollPane = new JScrollPane(panelPrincipal);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setBorder(null);
+
+        ventanaEditar.add(scrollPane);
+
+        // Cargar datos en los comboboxes y pre-seleccionar valores actuales
+        cargarDatosEditarReporte(comboEstadoUbic, comboMunicipioUbic, comboColoniaUbic,
+                comboCategoriaReporte, comboNivelPrioridad, comboEstadoReporte,
+                estadoActual, municipioActual, coloniaActual, categoriaActual, 
+                prioridadActual, estadoReporteActual);
+
+        // Listeners para cascada de ubicación
+        comboEstadoUbic.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED && comboEstadoUbic.getSelectedItem() != null) {
+                Map<?, ?> estadoSel = (Map<?, ?>) comboEstadoUbic.getSelectedItem();
+                Long idEstado = ((Number) estadoSel.get("idestado")).longValue();
+                cargarMunicipiosParaReporte(idEstado, comboMunicipioUbic, comboColoniaUbic);
+            }
+        });
+
+        comboMunicipioUbic.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED && comboMunicipioUbic.getSelectedItem() != null) {
+                Map<?, ?> municipioSel = (Map<?, ?>) comboMunicipioUbic.getSelectedItem();
+                Long idMunicipio = ((Number) municipioSel.get("idmunicipio")).longValue();
+                cargarColoniasParaReporte(idMunicipio, comboColoniaUbic);
+            }
+        });
+
+        ventanaEditar.setVisible(true);
+    }
+
+    // ============================================
+    // CARGAR DATOS PARA EDITAR REPORTE
+    // ============================================
+    private void cargarDatosEditarReporte(JComboBox<Map<?, ?>> comboEstado, JComboBox<Map<?, ?>> comboMunicipio,
+                                         JComboBox<Map<?, ?>> comboColonia, JComboBox<Map<?, ?>> comboCategoria,
+                                         JComboBox<Map<?, ?>> comboNivelPrioridad, JComboBox<Map<?, ?>> comboEstadoReporte,
+                                         String estadoActual, String municipioActual, String coloniaActual,
+                                         String categoriaActual, String prioridadActual, String estadoReporteActual) {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+
+                // Cargar estados de ubicación
+                ApiResponse<?> responseEstados = api.obtenerEstados();
+                if ("OK".equals(responseEstados.getStatus()) && responseEstados.getData() instanceof List<?> estados) {
+                    SwingUtilities.invokeLater(() -> {
+                        comboEstado.removeAllItems();
+                        for (Object item : estados) {
+                            if (item instanceof Map<?, ?>) {
+                                comboEstado.addItem((Map<?, ?>) item);
+                            }
+                        }
+                        // Pre-seleccionar estado actual
+                        seleccionarItemPorNombre(comboEstado, estadoActual);
+                    });
+                }
+
+                // Cargar categorías
+                ApiResponse<?> responseCategorias = api.obtenerCategoriasDeReporte();
+                if ("OK".equals(responseCategorias.getStatus()) && responseCategorias.getData() instanceof List<?> categorias) {
+                    SwingUtilities.invokeLater(() -> {
+                        comboCategoria.removeAllItems();
+                        for (Object item : categorias) {
+                            if (item instanceof Map<?, ?>) {
+                                comboCategoria.addItem((Map<?, ?>) item);
+                            }
+                        }
+                        // Pre-seleccionar categoría actual
+                        seleccionarItemPorNombre(comboCategoria, categoriaActual);
+                    });
+                }
+
+                // Cargar estados de reporte
+                ApiResponse<?> responseEstadosReporte = api.obtenerEstadosDeReporte();
+                if ("OK".equals(responseEstadosReporte.getStatus()) && responseEstadosReporte.getData() instanceof List<?> estadosReporte) {
+                    SwingUtilities.invokeLater(() -> {
+                        comboEstadoReporte.removeAllItems();
+                        for (Object item : estadosReporte) {
+                            if (item instanceof Map<?, ?>) {
+                                comboEstadoReporte.addItem((Map<?, ?>) item);
+                            }
+                        }
+                        // Pre-seleccionar estado de reporte actual
+                        seleccionarItemPorNombre(comboEstadoReporte, estadoReporteActual);
+                    });
+                }
+
+                // Cargar niveles de prioridad
+                ApiResponse<?> responseNiveles = api.obtenerNivelesDePrioridad();
+                if ("OK".equals(responseNiveles.getStatus()) && responseNiveles.getData() instanceof List<?> niveles) {
+                    SwingUtilities.invokeLater(() -> {
+                        comboNivelPrioridad.removeAllItems();
+                        for (Object item : niveles) {
+                            if (item instanceof Map<?, ?>) {
+                                comboNivelPrioridad.addItem((Map<?, ?>) item);
+                            }
+                        }
+                        // Pre-seleccionar prioridad actual
+                        seleccionarItemPorNombre(comboNivelPrioridad, prioridadActual);
+                    });
+                }
+
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() ->
+                        JOptionPane.showMessageDialog(this,
+                                "Error al cargar datos: " + ex.getMessage(),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE));
+            }
+        }).start();
+    }
+
+    // ============================================
+    // SELECCIONAR ITEM POR NOMBRE EN COMBOBOX
+    // ============================================
+    private void seleccionarItemPorNombre(JComboBox<Map<?, ?>> combo, String nombre) {
+        if (nombre == null || nombre.isEmpty()) return;
+        
+        for (int i = 0; i < combo.getItemCount(); i++) {
+            Map<?, ?> item = combo.getItemAt(i);
+            Object nombreItem = item.get("nombre");
+            if (nombreItem != null && nombreItem.toString().equalsIgnoreCase(nombre)) {
+                combo.setSelectedIndex(i);
+                break;
+            }
+        }
     }
 }
