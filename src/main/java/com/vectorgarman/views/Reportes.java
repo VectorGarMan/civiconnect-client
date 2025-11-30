@@ -1828,7 +1828,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
 
         panelAcciones.add(btnResponder);
 
-        // Botón "Eliminar" (solo si el comentario es del usuario actual)
+        // Botones "Editar" y "Eliminar" (solo si el comentario es del usuario actual)
         if (idUsuarioComentario != null &&
                 idUsuarioComentario.equals(usuarioLogueado.getIdusuario())) {
 
@@ -1838,6 +1838,42 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
             lblSeparador.setForeground(Color.LIGHT_GRAY);
             panelAcciones.add(lblSeparador);
 
+            // Botón "Editar"
+            JButton btnEditar = new JButton("<html><font face='Segoe UI Emoji'> ✏️ </font><font face='Arial'>Editar</font></html>");
+            btnEditar.setFont(new Font("Arial", Font.PLAIN, 12));
+            btnEditar.setForeground(new Color(13, 110, 253)); // Azul
+            btnEditar.setBorderPainted(false);
+            btnEditar.setContentAreaFilled(false);
+            btnEditar.setFocusPainted(false);
+            btnEditar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+            // Efecto hover
+            btnEditar.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    btnEditar.setForeground(new Color(10, 88, 202)); // Azul más oscuro
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    btnEditar.setForeground(new Color(13, 110, 253));
+                }
+            });
+
+            btnEditar.addActionListener(e -> {
+                ventanaActual.dispose();
+                abrirVentanaEditarComentario(idComentario, context);
+            });
+
+            panelAcciones.add(btnEditar);
+
+            // Separador visual
+            JLabel lblSeparador2 = new JLabel(" • ");
+            lblSeparador2.setFont(new Font("Arial", Font.PLAIN, 12));
+            lblSeparador2.setForeground(Color.LIGHT_GRAY);
+            panelAcciones.add(lblSeparador2);
+
+            // Botón "Eliminar"
             JButton btnEliminar = new JButton("<html><font face='Segoe UI Emoji'> 🗑️ </font><font face='Arial'>Eliminar</font></html>");
             btnEliminar.setFont(new Font("Arial", Font.PLAIN, 12));
             btnEliminar.setForeground(new Color(220, 53, 69)); // Rojo
@@ -2067,6 +2103,207 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                 SwingUtilities.invokeLater(() -> {
                     btnEnviar.setEnabled(true);
                     btnEnviar.setText("Enviar ➤");
+                    JOptionPane.showMessageDialog(ventanaActual,
+                            "Error al conectar con el servidor: " + ex.getMessage(),
+                            "Error de Conexión",
+                            JOptionPane.ERROR_MESSAGE);
+                });
+            }
+        }).start();
+    }
+
+    // ============================================
+// VENTANA EDITAR COMENTARIO
+// ============================================
+    private void abrirVentanaEditarComentario(Long idComentario, ComentarioContext context) {
+        // Primero, obtener el contenido actual del comentario
+        String contenidoActual = "";
+        Long idReporte = context.idReporte;
+        Long idComentarioPadre = null;
+        
+        // Buscar el comentario en la lista para obtener su contenido
+        for (Object obj : context.todosLosComentarios) {
+            if (obj instanceof Map<?, ?> comentarioMap) {
+                Object idComentarioObj = comentarioMap.get("idcomentario");
+                if (idComentarioObj != null && ((Number) idComentarioObj).longValue() == idComentario) {
+                    contenidoActual = comentarioMap.get("contenido") != null
+                        ? comentarioMap.get("contenido").toString() : "";
+                    Object idPadreObj = comentarioMap.get("idcomentariopadre");
+                    idComentarioPadre = idPadreObj != null ? ((Number) idPadreObj).longValue() : null;
+                    break;
+                }
+            }
+        }
+
+        String nombreUsuario = usuarioLogueado.getNombreusuario() != null
+                ? usuarioLogueado.getNombreusuario() : "Usuario";
+        Boolean esVerificado = usuarioLogueado.getEmpleadogubverificado() != null
+                ? usuarioLogueado.getEmpleadogubverificado() : false;
+
+        JDialog ventanaEditar = new JDialog(
+                (Frame) SwingUtilities.getWindowAncestor(this),
+                "Editar Comentario",
+                true
+        );
+        ventanaEditar.setSize(700, 400);
+        ventanaEditar.setLocationRelativeTo(this);
+        ventanaEditar.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+        // Panel principal
+        JPanel panelPrincipal = new JPanel(new BorderLayout(15, 15));
+        panelPrincipal.setBackground(Color.WHITE);
+        panelPrincipal.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Panel nombre
+        JPanel panelNombre = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        panelNombre.setBackground(Color.WHITE);
+
+        JLabel lblNombreUsuario = new JLabel(nombreUsuario + " ");
+        lblNombreUsuario.setFont(new Font("Arial", Font.BOLD, 13));
+        panelNombre.add(lblNombreUsuario);
+
+        if (esVerificado) {
+            JLabel lblVerificado = new JLabel("<html><font face='Segoe UI Emoji'> ✓ </font><font face='Arial'>Gubernamental</font></html>");
+            lblVerificado.setFont(new Font("Arial", Font.BOLD, 13));
+            lblVerificado.setForeground(new Color(25, 135, 84));
+            panelNombre.add(lblVerificado);
+        }
+
+        // Área de texto con contenido actual
+        JTextArea txtContenido = new JTextArea(contenidoActual);
+        txtContenido.setLineWrap(true);
+        txtContenido.setWrapStyleWord(true);
+        txtContenido.setFont(new Font("Arial", Font.PLAIN, 14));
+        txtContenido.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        txtContenido.setBackground(new Color(248, 249, 250));
+
+        JScrollPane scrollContenido = new JScrollPane(txtContenido);
+        scrollContenido.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+
+        // Panel inferior con botones
+        JPanel panelInferior = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        panelInferior.setBackground(Color.WHITE);
+
+        JLabel lblContador = new JLabel(contenidoActual.length() + " caracteres");
+        lblContador.setFont(new Font("Arial", Font.PLAIN, 12));
+        lblContador.setForeground(contenidoActual.length() > 1000 ? Color.RED : Color.GRAY);
+
+        txtContenido.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { actualizar(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { actualizar(); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { actualizar(); }
+
+            private void actualizar() {
+                int longitud = txtContenido.getText().length();
+                lblContador.setText(longitud + " caracteres");
+                lblContador.setForeground(longitud > 1000 ? Color.RED : Color.GRAY);
+            }
+        });
+
+        JButton btnCancelar = new JButton("Cancelar");
+        btnCancelar.setFont(new Font("Arial", Font.PLAIN, 13));
+        btnCancelar.setFocusPainted(false);
+        btnCancelar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnCancelar.addActionListener(e -> {
+            ventanaEditar.dispose();
+            // Volver a la ventana anterior
+            cargarYMostrarComentarios(context.idReporte, context.idComentarioPadre);
+        });
+
+        JButton btnGuardar = new JButton("<html><font face='Arial'>Guardar</font><font face='Segoe UI Emoji'> ✓ </font></html>");
+        btnGuardar.setFont(new Font("Arial", Font.BOLD, 13));
+        btnGuardar.setBackground(new Color(25, 135, 84));
+        btnGuardar.setForeground(Color.WHITE);
+        btnGuardar.setFocusPainted(false);
+        btnGuardar.setBorderPainted(false);
+        btnGuardar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnGuardar.setPreferredSize(new Dimension(120, 35));
+
+        final Long idComentarioPadreFinal = idComentarioPadre;
+
+        btnGuardar.addActionListener(e -> {
+            String contenido = txtContenido.getText().trim();
+
+            if (contenido.isEmpty()) {
+                JOptionPane.showMessageDialog(ventanaEditar,
+                        "El contenido del comentario no puede estar vacío",
+                        "Campo requerido",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (contenido.length() > 1000) {
+                JOptionPane.showMessageDialog(ventanaEditar,
+                        "El comentario no puede exceder los 1000 caracteres",
+                        "Contenido muy largo",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            btnGuardar.setEnabled(false);
+            btnGuardar.setText("Guardando...");
+
+            actualizarComentario(idComentario, idReporte, idComentarioPadreFinal, contenido, ventanaEditar, btnGuardar, context);
+        });
+
+        panelInferior.add(lblContador);
+        panelInferior.add(Box.createHorizontalStrut(10));
+        panelInferior.add(btnCancelar);
+        panelInferior.add(btnGuardar);
+
+        panelPrincipal.add(panelNombre, BorderLayout.NORTH);
+        panelPrincipal.add(scrollContenido, BorderLayout.CENTER);
+        panelPrincipal.add(panelInferior, BorderLayout.SOUTH);
+
+        ventanaEditar.add(panelPrincipal);
+        ventanaEditar.setVisible(true);
+    }
+
+    // ============================================
+// ACTUALIZAR COMENTARIO
+// ============================================
+    private void actualizarComentario(Long idComentario, Long idReporte, Long idComentarioPadre,
+                                      String contenido, JDialog ventanaActual, JButton btnGuardar,
+                                      ComentarioContext context) {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ApiResponse<?> response = api.actualizarComentario(
+                        idComentario,
+                        usuarioLogueado.getIdusuario(),
+                        idReporte,
+                        idComentarioPadre,
+                        contenido
+                );
+
+                SwingUtilities.invokeLater(() -> {
+                    if (response != null && response.isSuccess()) {
+                        JOptionPane.showMessageDialog(ventanaActual,
+                                "Comentario actualizado exitosamente",
+                                "Éxito",
+                                JOptionPane.INFORMATION_MESSAGE);
+
+                        ventanaActual.dispose();
+
+                        // Recargar la ventana del nivel actual
+                        cargarYMostrarComentarios(context.idReporte, context.idComentarioPadre);
+                    } else {
+                        btnGuardar.setEnabled(true);
+                        btnGuardar.setText("<html><font face='Arial'>Guardar</font><font face='Segoe UI Emoji'> ✓ </font></html>");
+                        JOptionPane.showMessageDialog(ventanaActual,
+                                "Error al actualizar el comentario: " +
+                                        (response != null ? response.getMensaje() : "Error desconocido"),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> {
+                    btnGuardar.setEnabled(true);
+                    btnGuardar.setText("<html><font face='Arial'>Guardar</font><font face='Segoe UI Emoji'> ✓ </font></html>");
                     JOptionPane.showMessageDialog(ventanaActual,
                             "Error al conectar con el servidor: " + ex.getMessage(),
                             "Error de Conexión",
