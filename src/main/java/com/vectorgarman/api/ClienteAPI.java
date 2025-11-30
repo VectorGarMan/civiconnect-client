@@ -90,6 +90,41 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    public ApiResponse<?> crearReporte(Long idusuario, Long idcolonia, Long idnivelprioridad, Long idestadoreporte, Long idcategoria, Long titulo, Long descripcion, Long solucionpropuesta, Long calle, Long referencia) throws Exception {
+        // Crear el objeto LoginRequest
+        CrearReporteRequest crearReporteRequest = new CrearReporteRequest();
+        crearReporteRequest.setIdusuario(idusuario);
+        crearReporteRequest.setIdcolonia(idcolonia);
+        crearReporteRequest.setIdnivelprioridad(idnivelprioridad);
+        crearReporteRequest.setIdestadoreporte(idestadoreporte);
+        crearReporteRequest.setIdcategoria(idcategoria);
+        crearReporteRequest.setTitulo(titulo);
+        crearReporteRequest.setDescripcion(descripcion);
+        crearReporteRequest.setSolucionpropuesta(solucionpropuesta);
+        crearReporteRequest.setCalle(calle);
+        crearReporteRequest.setReferencia(referencia);
+
+        // Convertir el objeto a JSON
+        String jsonBody = gson.toJson(crearReporteRequest);
+
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/reporte/crearActualizar"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        // Parsear la respuesta
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
     public ApiResponse<?> actualizarComentario(Long idcomentario, Long idusuario, Long idreporte, Long idcomentariopadre, String contenido) throws Exception {
         // Crear el objeto LoginRequest
 

@@ -1839,7 +1839,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
             panelAcciones.add(lblSeparador);
 
             // Botón "Editar"
-            JButton btnEditar = new JButton("<html><font face='Segoe UI Emoji'> ✏️ </font><font face='Arial'>Editar</font></html>");
+            JButton btnEditar = new JButton("<html><font face='Segoe UI Emoji'> ✏ </font><font face='Arial'>Editar</font></html>");
             btnEditar.setFont(new Font("Arial", Font.PLAIN, 12));
             btnEditar.setForeground(new Color(13, 110, 253)); // Azul
             btnEditar.setBorderPainted(false);
