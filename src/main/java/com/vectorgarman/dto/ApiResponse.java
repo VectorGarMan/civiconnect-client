@@ -47,4 +47,8 @@ public class ApiResponse<T> {
                 ", data=" + data +
                 '}';
     }
+
+    public boolean isSuccess() {
+        return true;
+    }
 }
