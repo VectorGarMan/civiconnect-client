@@ -1135,7 +1135,7 @@ public class Reportes extends JFrame {
         new Thread(() -> {
             try {
                 ClienteAPI api = new ClienteAPI();
-                ApiResponse<?> response = api.crearActualizarComentario(
+                ApiResponse<?> response = api.crearComentario(
                         usuarioLogueado.getIdusuario(),
                         idReporte,
                         null, // ⭐ null = comentario principal, no respuesta
@@ -2035,7 +2035,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
         new Thread(() -> {
             try {
                 ClienteAPI api = new ClienteAPI();
-                ApiResponse<?> response = api.crearActualizarComentario(
+                ApiResponse<?> response = api.crearComentario(
                         usuarioLogueado.getIdusuario(),
                         idReporte,
                         idComentarioPadre,

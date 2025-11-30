@@ -61,7 +61,7 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
-    public ApiResponse<?> crearActualizarComentario(Long idusuario, Long idreporte, Long idcomentariopadre, String contenido) throws Exception {
+    public ApiResponse<?> crearComentario(Long idusuario, Long idreporte, Long idcomentariopadre, String contenido) throws Exception {
         // Crear el objeto LoginRequest
         ComentarioRequest comentarioRequest = new ComentarioRequest();
         comentarioRequest.setIdusuario(idusuario);
@@ -71,6 +71,37 @@ public class ClienteAPI {
 
         // Convertir el objeto a JSON
         String jsonBody = gson.toJson(comentarioRequest);
+
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/reporte/comentario/crearActualizar"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        // Parsear la respuesta
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    public ApiResponse<?> actualizarComentario(Long idcomentario, Long idusuario, Long idreporte, Long idcomentariopadre, String contenido) throws Exception {
+        // Crear el objeto LoginRequest
+
+        EditarComentarioRequest editarComentarioRequest = new EditarComentarioRequest();
+        editarComentarioRequest.setIdcomentario(idcomentario);
+        editarComentarioRequest.setIdusuario(idusuario);
+        editarComentarioRequest.setIdreporte(idreporte);
+        editarComentarioRequest.setIdcomentariopadre(idcomentariopadre);
+        editarComentarioRequest.setContenido(contenido);
+
+        // Convertir el objeto a JSON
+        String jsonBody = gson.toJson(editarComentarioRequest);
 
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -325,24 +356,6 @@ public class ClienteAPI {
                     .uri(new URI(BASE_URL + "/reporte/eliminarComentario"))
                     .header("Content-Type", "application/json")
                     .method("DELETE", HttpRequest.BodyPublishers.ofString(jsonBody))
-                    .build();
-
-            response = client.send(
-                    request,
-                    HttpResponse.BodyHandlers.ofString()
-            );
-        }
-
-        return gson.fromJson(response.body(), ApiResponse.class);
-    }
-
-    public ApiResponse<?> obtenerComentariosPorComentarioPadre(Long idComentarioPadre) throws Exception {
-        HttpResponse<String> response;
-        try (HttpClient client = HttpClient.newHttpClient()) {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI(BASE_URL + "/reporte/comentario/obtenerPorComentarioPadre/" + idComentarioPadre))
-                    .header("Content-Type", "application/json")
-                    .GET()
                     .build();
 
             response = client.send(
