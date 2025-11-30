@@ -5,11 +5,15 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.vectorgarman.dto.*;
 
+import java.io.File;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ClienteAPI {
 
@@ -25,6 +29,8 @@ public class ClienteAPI {
             )
             .setObjectToNumberStrategy(ToNumberPolicy.LAZILY_PARSED_NUMBER)
             .create();
+
+    private static final HttpClient httpClient = HttpClient.newHttpClient();
 
     /**
      * Realiza el login del usuario
@@ -90,8 +96,171 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
-    public ApiResponse<?> crearReporte(Long idusuario, Long idcolonia, Long idnivelprioridad, Long idestadoreporte, Long idcategoria, Long titulo, Long descripcion, Long solucionpropuesta, Long calle, Long referencia) throws Exception {
-        // Crear el objeto LoginRequest
+    // -----------------------------------------------------------------
+
+    // Este metodo, sirve para obtener las evidencias de un solo reporte para cuando se va a editar uno.
+    public ApiResponse<?> obtenerEvidenciaPorReporte(Long idreporte) throws Exception {
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/reporte/evidencia/obtenerPorReporte/" + idreporte))
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        // Parsear la respuesta
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+    // Este metodo sirve para obtener las categorías que van a ir en un combobox al crear reporte o editarlo
+    public ApiResponse<?> obtenerCategoriasDeReporte() throws Exception {
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/reporte/categoria/obtener"))
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    // Este metodo sirve para obtener los estados de reporte que van a ir en un combobox al crear reporte o editarlo
+    public ApiResponse<?> obtenerEstadosDeReporte() throws Exception {
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/reporte/estadoReporte/obtener"))
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    // Este metodo sirve para obtener los niveles de prioridad de reporte que van a ir en un combobox al crear reporte o editarlo
+    public ApiResponse<?> obtenerNivelesDePrioridad() throws Exception {
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/reporte/nivelPrioridad/obtener"))
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    // Este metodo sirve para editar un reporte.
+    public ApiResponse<?> editarReporte(
+            Long idreporte, Long idusuario, Long idcolonia, Long idnivelprioridad,
+            Long idestadoreporte, Long idcategoria, String titulo,
+            String descripcion, String solucionpropuesta, String calle,
+            String referencia, List<File> evidenciasAgregar,
+            List<Long> evidenciasIdsEliminar) throws Exception {
+
+        // 1) Construir el objeto reporte con idreporte
+        EditarReporteRequest requestData = new EditarReporteRequest();
+        requestData.setIdreporte(idreporte);
+        requestData.setIdusuario(idusuario);
+        requestData.setIdcolonia(idcolonia);
+        requestData.setIdnivelprioridad(idnivelprioridad);
+        requestData.setIdestadoreporte(idestadoreporte);
+        requestData.setIdcategoria(idcategoria);
+        requestData.setTitulo(titulo);
+        requestData.setDescripcion(descripcion);
+        requestData.setSolucionpropuesta(solucionpropuesta);
+        requestData.setCalle(calle);
+        requestData.setReferencia(referencia);
+
+        String jsonReporte = gson.toJson(requestData);
+        String jsonEvidenciasEliminar = gson.toJson(evidenciasIdsEliminar);
+
+        String boundary = "----CiviConnectBoundary" + System.currentTimeMillis();
+        var parts = new ArrayList<byte[]>();
+
+        // Parte del JSON reporte
+        parts.add((
+                "--" + boundary + "\r\n" +
+                        "Content-Disposition: form-data; name=\"reporte\"\r\n" +
+                        "Content-Type: application/json\r\n\r\n" +
+                        jsonReporte + "\r\n"
+        ).getBytes());
+
+        // Parte de IDs de evidencias a eliminar
+        parts.add((
+                "--" + boundary + "\r\n" +
+                        "Content-Disposition: form-data; name=\"evidenciasIdsEliminar\"\r\n" +
+                        "Content-Type: application/json\r\n\r\n" +
+                        jsonEvidenciasEliminar + "\r\n"
+        ).getBytes());
+
+        // Nuevas evidencias (si existen)
+        if (evidenciasAgregar != null) {
+            for (File evidencia : evidenciasAgregar) {
+                parts.add((
+                        "--" + boundary + "\r\n" +
+                                "Content-Disposition: form-data; name=\"evidencia\"; filename=\"" + evidencia.getName() + "\"\r\n" +
+                                "Content-Type: application/octet-stream\r\n\r\n"
+                ).getBytes());
+
+                parts.add(Files.readAllBytes(evidencia.toPath()));
+                parts.add("\r\n".getBytes());
+            }
+        }
+
+        // Cierre del multipart
+        parts.add(("--" + boundary + "--").getBytes());
+
+        // Request HTTP
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI(BASE_URL + "/reporte/crearActualizar"))
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .POST(HttpRequest.BodyPublishers.ofByteArrays(parts))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(
+                request,
+                HttpResponse.BodyHandlers.ofString()
+        );
+
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    // Este metodo sirve para crear un reporte.
+    public ApiResponse<?> crearReporte(
+            Long idusuario, Long idcolonia, Long idnivelprioridad,
+            Long idestadoreporte, Long idcategoria, String titulo,
+            String descripcion, String solucionpropuesta, String calle,
+            String referencia, List<File> evidencias) throws Exception {
+
+        // 1) Construir el objeto JSON como hace tu curl
         CrearReporteRequest crearReporteRequest = new CrearReporteRequest();
         crearReporteRequest.setIdusuario(idusuario);
         crearReporteRequest.setIdcolonia(idcolonia);
@@ -104,26 +273,49 @@ public class ClienteAPI {
         crearReporteRequest.setCalle(calle);
         crearReporteRequest.setReferencia(referencia);
 
-        // Convertir el objeto a JSON
-        String jsonBody = gson.toJson(crearReporteRequest);
+        String jsonReporte = gson.toJson(crearReporteRequest);
 
-        HttpResponse<String> response;
-        try (HttpClient client = HttpClient.newHttpClient()) {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI(BASE_URL + "/reporte/crearActualizar"))
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                    .build();
+        // 2) Generar límites y construir multipart
+        String boundary = "----CiviConnectBoundary" + System.currentTimeMillis();
 
-            response = client.send(
-                    request,
-                    HttpResponse.BodyHandlers.ofString()
-            );
+        var byteArrays = new ArrayList<byte[]>();
+
+        // Parte del JSON
+        byteArrays.add((
+                "--" + boundary + "\r\n" +
+                        "Content-Disposition: form-data; name=\"reporte\"\r\n" +
+                        "Content-Type: application/json\r\n\r\n" +
+                        jsonReporte + "\r\n"
+        ).getBytes());
+
+        // 3) Adjuntar archivos evidencia
+        for (File evidencia : evidencias) {
+            byteArrays.add((
+                    "--" + boundary + "\r\n" +
+                            "Content-Disposition: form-data; name=\"evidencia\"; filename=\"" + evidencia.getName() + "\"\r\n" +
+                            "Content-Type: application/octet-stream\r\n\r\n"
+            ).getBytes());
+
+            byteArrays.add(Files.readAllBytes(evidencia.toPath()));
+            byteArrays.add("\r\n".getBytes());
         }
 
-        // Parsear la respuesta
+        // Cierre del multipart
+        byteArrays.add(("--" + boundary + "--").getBytes());
+
+        // 4) Crear request HTTP
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI(BASE_URL + "/reporte/crearActualizar"))
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .POST(HttpRequest.BodyPublishers.ofByteArrays(byteArrays))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
         return gson.fromJson(response.body(), ApiResponse.class);
     }
+
+    // ------------------------------------------------------------
 
     public ApiResponse<?> actualizarComentario(Long idcomentario, Long idusuario, Long idreporte, Long idcomentariopadre, String contenido) throws Exception {
         // Crear el objeto LoginRequest

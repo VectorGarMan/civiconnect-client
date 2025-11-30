@@ -1,6 +1,7 @@
 package com.vectorgarman.dto;
 
-public class CrearReporteRequest {
+public class EditarReporteRequest {
+    private Long idreporte;
     private Long idusuario;
     private Long idcolonia;
     private Long idnivelprioridad;
@@ -12,10 +13,11 @@ public class CrearReporteRequest {
     private String calle;
     private String referencia;
 
-    public CrearReporteRequest() {
+    public EditarReporteRequest() {
     }
 
-    public CrearReporteRequest(Long idusuario, Long idcolonia, Long idnivelprioridad, Long idestadoreporte, Long idcategoria, String titulo, String descripcion, String solucionpropuesta, String calle, String referencia) {
+    public EditarReporteRequest(Long idreporte, Long idusuario, Long idcolonia, Long idnivelprioridad, Long idestadoreporte, Long idcategoria, String titulo, String descripcion, String solucionpropuesta, String calle, String referencia) {
+        this.idreporte = idreporte;
         this.idusuario = idusuario;
         this.idcolonia = idcolonia;
         this.idnivelprioridad = idnivelprioridad;
@@ -26,6 +28,14 @@ public class CrearReporteRequest {
         this.solucionpropuesta = solucionpropuesta;
         this.calle = calle;
         this.referencia = referencia;
+    }
+
+    public Long getIdreporte() {
+        return idreporte;
+    }
+
+    public void setIdreporte(Long idreporte) {
+        this.idreporte = idreporte;
     }
 
     public Long getIdusuario() {
