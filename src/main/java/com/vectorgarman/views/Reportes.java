@@ -3576,38 +3576,66 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
             int resultado = fileChooser.showOpenDialog(ventanaEditar);
             if (resultado == JFileChooser.APPROVE_OPTION) {
                 java.io.File[] archivos = fileChooser.getSelectedFiles();
-                nuevosArchivos.addAll(Arrays.asList(archivos));
-                
-                lblNuevosArchivos.setText(nuevosArchivos.size() + " nuevo(s)");
-                lblNuevosArchivos.setForeground(new Color(25, 135, 84));
                 
                 // Mostrar miniaturas de nuevos archivos
                 for (java.io.File archivo : archivos) {
                     try {
                         BufferedImage img = javax.imageio.ImageIO.read(archivo);
                         if (img != null) {
+                            // Agregar a la lista
+                            nuevosArchivos.add(archivo);
+                            
                             Image scaledImg = img.getScaledInstance(120, 80, Image.SCALE_SMOOTH);
                             
                             JPanel panelImagen = new JPanel(new BorderLayout());
-                            panelImagen.setPreferredSize(new Dimension(120, 100));
+                            panelImagen.setPreferredSize(new Dimension(120, 120));
                             
                             JLabel lblImg = new JLabel(new ImageIcon(scaledImg));
                             lblImg.setPreferredSize(new Dimension(120, 80));
                             lblImg.setBorder(BorderFactory.createLineBorder(new Color(25, 135, 84), 2));
+                            
+                            // Panel inferior con etiqueta y botón eliminar
+                            JPanel panelInferior = new JPanel(new BorderLayout());
+                            panelInferior.setPreferredSize(new Dimension(120, 40));
                             
                             JLabel lblNuevo = new JLabel("NUEVO", SwingConstants.CENTER);
                             lblNuevo.setFont(new Font("Arial", Font.BOLD, 10));
                             lblNuevo.setForeground(new Color(25, 135, 84));
                             lblNuevo.setPreferredSize(new Dimension(120, 20));
                             
+                            JButton btnEliminarNuevo = new JButton("❌");
+                            btnEliminarNuevo.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 10));
+                            btnEliminarNuevo.setPreferredSize(new Dimension(120, 20));
+                            btnEliminarNuevo.setFocusPainted(false);
+                            btnEliminarNuevo.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                            
+                            btnEliminarNuevo.addActionListener(ev -> {
+                                nuevosArchivos.remove(archivo);
+                                panelEvidencias.remove(panelImagen);
+                                lblNuevosArchivos.setText(nuevosArchivos.size() + " nuevo(s)");
+                                if (nuevosArchivos.isEmpty()) {
+                                    lblNuevosArchivos.setForeground(Color.GRAY);
+                                }
+                                panelEvidencias.revalidate();
+                                panelEvidencias.repaint();
+                            });
+                            
+                            panelInferior.add(lblNuevo, BorderLayout.NORTH);
+                            panelInferior.add(btnEliminarNuevo, BorderLayout.SOUTH);
+                            
                             panelImagen.add(lblImg, BorderLayout.CENTER);
-                            panelImagen.add(lblNuevo, BorderLayout.SOUTH);
+                            panelImagen.add(panelInferior, BorderLayout.SOUTH);
                             panelEvidencias.add(panelImagen);
                         }
                     } catch (Exception ex) {
                         System.err.println("Error al cargar imagen: " + ex.getMessage());
                     }
                 }
+                
+                // Actualizar contador
+                lblNuevosArchivos.setText(nuevosArchivos.size() + " nuevo(s)");
+                lblNuevosArchivos.setForeground(new Color(25, 135, 84));
+                
                 panelEvidencias.revalidate();
                 panelEvidencias.repaint();
             }
@@ -3958,7 +3986,23 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
 
                 // Cargar estados de ubicación
                 ApiResponse<?> responseEstados = api.obtenerEstados();
+                Long idEstadoSeleccionado = null;
+                
                 if ("OK".equals(responseEstados.getStatus()) && responseEstados.getData() instanceof List<?> estados) {
+                    // Buscar el ID del estado actual
+                    for (Object item : estados) {
+                        if (item instanceof Map<?, ?> estadoMap) {
+                            String nombre = estadoMap.get("nombre") != null ? estadoMap.get("nombre").toString() : "";
+                            if (nombre.equalsIgnoreCase(estadoActual)) {
+                                idEstadoSeleccionado = estadoMap.get("idestado") != null
+                                    ? ((Number) estadoMap.get("idestado")).longValue() : null;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    final Long idEstadoFinal = idEstadoSeleccionado;
+                    
                     SwingUtilities.invokeLater(() -> {
                         comboEstado.removeAllItems();
                         for (Object item : estados) {
@@ -3969,6 +4013,61 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                         // Pre-seleccionar estado actual
                         seleccionarItemPorNombre(comboEstado, estadoActual);
                     });
+                    
+                    // ⭐ CARGAR MUNICIPIOS del estado seleccionado
+                    if (idEstadoSeleccionado != null) {
+                        ApiResponse<?> responseMunicipios = api.obtenerMunicipios(idEstadoSeleccionado);
+                        Long idMunicipioSeleccionado = null;
+                        
+                        if ("OK".equals(responseMunicipios.getStatus()) && responseMunicipios.getData() instanceof List<?> municipios) {
+                            // Buscar el ID del municipio actual
+                            for (Object item : municipios) {
+                                if (item instanceof Map<?, ?> municipioMap) {
+                                    String nombre = municipioMap.get("nombre") != null ? municipioMap.get("nombre").toString() : "";
+                                    if (nombre.equalsIgnoreCase(municipioActual)) {
+                                        idMunicipioSeleccionado = municipioMap.get("idmunicipio") != null
+                                            ? ((Number) municipioMap.get("idmunicipio")).longValue() : null;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            final Long idMunicipioFinal = idMunicipioSeleccionado;
+                            
+                            SwingUtilities.invokeLater(() -> {
+                                comboMunicipio.removeAllItems();
+                                for (Object item : municipios) {
+                                    if (item instanceof Map<?, ?>) {
+                                        comboMunicipio.addItem((Map<?, ?>) item);
+                                    }
+                                }
+                                comboMunicipio.setEnabled(true);
+                                // Pre-seleccionar municipio actual
+                                seleccionarItemPorNombre(comboMunicipio, municipioActual);
+                            });
+                            
+                            // ⭐ CARGAR COLONIAS del municipio seleccionado
+                            if (idMunicipioSeleccionado != null) {
+                                ApiResponse<?> responseColonias = api.obtenerColonia(idMunicipioSeleccionado);
+                                
+                                if ("OK".equals(responseColonias.getStatus()) && responseColonias.getData() instanceof List<?> colonias) {
+                                    SwingUtilities.invokeLater(() -> {
+                                        comboColonia.removeAllItems();
+                                        for (Object item : colonias) {
+                                            if (item instanceof Map<?, ?>) {
+                                                comboColonia.addItem((Map<?, ?>) item);
+                                            }
+                                        }
+                                        if (comboColonia.getItemCount() > 0) {
+                                            comboColonia.setEnabled(true);
+                                        }
+                                        // Pre-seleccionar colonia actual
+                                        seleccionarItemPorNombre(comboColonia, coloniaActual);
+                                    });
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // Cargar categorías
