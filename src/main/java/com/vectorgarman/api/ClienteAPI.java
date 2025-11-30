@@ -310,6 +310,32 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    public ApiResponse<?> eliminarComentario(Long idcomentario, Long idusuario) throws Exception {
+
+        EliminarComentarioRequest eliminarComentarioRequest = new EliminarComentarioRequest();
+        eliminarComentarioRequest.setIdcomentario(idcomentario);
+        eliminarComentarioRequest.setIdusuario(idusuario);
+
+
+        String jsonBody = gson.toJson(eliminarComentarioRequest);
+
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/reporte/eliminarComentario"))
+                    .header("Content-Type", "application/json")
+                    .method("DELETE", HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
     public ApiResponse<?> obtenerComentariosPorComentarioPadre(Long idComentarioPadre) throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {

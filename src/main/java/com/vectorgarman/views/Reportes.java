@@ -506,11 +506,13 @@ public class Reportes extends JFrame {
                         Object dataObj = response.getData();
 
                         if (dataObj instanceof List<?> reportes) {
-                            // Guardar todos los reportes
+                            // ⭐ CAMBIO IMPORTANTE: Convertir a mapas mutables
                             todosLosReportes.clear();
                             for (Object item : reportes) {
                                 if (item instanceof Map<?, ?> reporteMap) {
-                                    todosLosReportes.add(reporteMap);
+                                    // Convertir a HashMap mutable
+                                    Map<String, Object> reporteMutable = convertirAMapaMutable(reporteMap);
+                                    todosLosReportes.add(reporteMutable);
                                 }
                             }
 
@@ -532,6 +534,32 @@ public class Reportes extends JFrame {
             }
         }).start();
     }
+
+    // ============================================
+// MÉTOD0 AUXILIAR: Convertir mapa a mutable
+// ============================================
+    private Map<String, Object> convertirAMapaMutable(Map<?, ?> mapaOriginal) {
+        Map<String, Object> mapaMutable = new HashMap<>();
+
+        for (Map.Entry<?, ?> entry : mapaOriginal.entrySet()) {
+            String key = entry.getKey().toString();
+            Object value = entry.getValue();
+
+            // Si el valor es un mapa, también lo convertimos a mutable
+            if (value instanceof Map<?, ?>) {
+                value = convertirAMapaMutable((Map<?, ?>) value);
+            }
+            // Si el valor es una lista, podríamos convertirla también
+            else if (value instanceof List<?>) {
+                value = new ArrayList<>((List<?>) value);
+            }
+
+            mapaMutable.put(key, value);
+        }
+
+        return mapaMutable;
+    }
+
 
     private void aplicarFiltrosYMostrar() {
         // Obtener los valores seleccionados en los combobox
@@ -651,6 +679,7 @@ public class Reportes extends JFrame {
         // Panel principal de la tarjeta
         JPanel tarjeta = new JPanel();
         tarjeta.setLayout(new BorderLayout());
+        tarjeta.putClientProperty("idReporte", idReporte);
         tarjeta.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
         tarjeta.setMaximumSize(new Dimension(900, 440));
         tarjeta.setBackground(Color.WHITE);
@@ -870,9 +899,8 @@ public class Reportes extends JFrame {
         btnCrearComentario.setContentAreaFilled(false);
         btnCrearComentario.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        // Listener que ejecutará abrir la ventana de escribir comentario
         btnCrearComentario.addActionListener(e -> {
-//            abrirVentanaCrearComentario(idReporte, null);
+            abrirVentanaCrearComentarioDesdeReporte(idReporte);
         });
 
         panelSocial.add(btnVotar);
@@ -972,7 +1000,391 @@ public class Reportes extends JFrame {
         return tarjeta;
     }
 
+    // --------------------------------
+
+    // ============================================
+// ABRIR VENTANA CREAR COMENTARIO DESDE REPORTE
 // ============================================
+    private void abrirVentanaCrearComentarioDesdeReporte(Long idReporte) {
+        String nombreUsuario = usuarioLogueado.getNombreusuario() != null
+                ? usuarioLogueado.getNombreusuario() : "Usuario";
+        Boolean esVerificado = usuarioLogueado.getEmpleadogubverificado() != null
+                ? usuarioLogueado.getEmpleadogubverificado() : false;
+
+        JDialog ventanaCrear = new JDialog(
+                this,
+                "Nuevo Comentario",
+                true
+        );
+        ventanaCrear.setSize(700, 400);
+        ventanaCrear.setLocationRelativeTo(this);
+        ventanaCrear.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+        // Panel principal
+        JPanel panelPrincipal = new JPanel(new BorderLayout(15, 15));
+        panelPrincipal.setBackground(Color.WHITE);
+        panelPrincipal.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Panel nombre
+        JPanel panelNombre = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        panelNombre.setBackground(Color.WHITE);
+
+        JLabel lblNombreUsuario = new JLabel(nombreUsuario + " ");
+        lblNombreUsuario.setFont(new Font("Arial", Font.BOLD, 13));
+        panelNombre.add(lblNombreUsuario);
+
+        if (esVerificado) {
+            JLabel lblVerificado = new JLabel("<html><font face='Segoe UI Emoji'> ✓ </font><font face='Arial'>Gubernamental</font></html>");
+            lblVerificado.setFont(new Font("Arial", Font.BOLD, 13));
+            lblVerificado.setForeground(new Color(25, 135, 84));
+            panelNombre.add(lblVerificado);
+        }
+
+        // Área de texto
+        JTextArea txtContenido = new JTextArea();
+        txtContenido.setLineWrap(true);
+        txtContenido.setWrapStyleWord(true);
+        txtContenido.setFont(new Font("Arial", Font.PLAIN, 14));
+        txtContenido.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        txtContenido.setBackground(new Color(248, 249, 250));
+
+        JScrollPane scrollContenido = new JScrollPane(txtContenido);
+        scrollContenido.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+
+        // Panel inferior con botones
+        JPanel panelInferior = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        panelInferior.setBackground(Color.WHITE);
+
+        JLabel lblContador = new JLabel("0 caracteres");
+        lblContador.setFont(new Font("Arial", Font.PLAIN, 12));
+        lblContador.setForeground(Color.GRAY);
+
+        txtContenido.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { actualizar(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { actualizar(); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { actualizar(); }
+
+            private void actualizar() {
+                int longitud = txtContenido.getText().length();
+                lblContador.setText(longitud + " caracteres");
+                lblContador.setForeground(longitud > 1000 ? Color.RED : Color.GRAY);
+            }
+        });
+
+        JButton btnCancelar = new JButton("Cancelar");
+        btnCancelar.setFont(new Font("Arial", Font.PLAIN, 13));
+        btnCancelar.setFocusPainted(false);
+        btnCancelar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnCancelar.addActionListener(e -> ventanaCrear.dispose());
+
+        JButton btnEnviar = new JButton("<html><font face='Arial'>Enviar</font><font face='Segoe UI Emoji'> ➤ </font></html>");
+        btnEnviar.setFont(new Font("Arial", Font.BOLD, 13));
+        btnEnviar.setBackground(new Color(13, 110, 253));
+        btnEnviar.setForeground(Color.WHITE);
+        btnEnviar.setFocusPainted(false);
+        btnEnviar.setBorderPainted(false);
+        btnEnviar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnEnviar.setPreferredSize(new Dimension(120, 35));
+
+        btnEnviar.addActionListener(e -> {
+            String contenido = txtContenido.getText().trim();
+
+            if (contenido.isEmpty()) {
+                JOptionPane.showMessageDialog(ventanaCrear,
+                        "El contenido del comentario no puede estar vacío",
+                        "Campo requerido",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (contenido.length() > 1000) {
+                JOptionPane.showMessageDialog(ventanaCrear,
+                        "El comentario no puede exceder los 1000 caracteres",
+                        "Contenido muy largo",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            btnEnviar.setEnabled(false);
+            btnEnviar.setText("Enviando...");
+
+            enviarComentarioDesdeReporte(idReporte, contenido, ventanaCrear, btnEnviar);
+        });
+
+        panelInferior.add(lblContador);
+        panelInferior.add(Box.createHorizontalStrut(10));
+        panelInferior.add(btnCancelar);
+        panelInferior.add(btnEnviar);
+
+        panelPrincipal.add(panelNombre, BorderLayout.NORTH);
+        panelPrincipal.add(scrollContenido, BorderLayout.CENTER);
+        panelPrincipal.add(panelInferior, BorderLayout.SOUTH);
+
+        ventanaCrear.add(panelPrincipal);
+        ventanaCrear.setVisible(true);
+    }
+
+    // ============================================
+// ENVIAR COMENTARIO DESDE REPORTE
+// ============================================
+    private void enviarComentarioDesdeReporte(Long idReporte, String contenido,
+                                              JDialog ventanaActual, JButton btnEnviar) {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ApiResponse<?> response = api.crearActualizarComentario(
+                        usuarioLogueado.getIdusuario(),
+                        idReporte,
+                        null, // ⭐ null = comentario principal, no respuesta
+                        contenido
+                );
+
+                SwingUtilities.invokeLater(() -> {
+                    if (response != null && response.isSuccess()) {
+                        JOptionPane.showMessageDialog(ventanaActual,
+                                "Comentario enviado exitosamente",
+                                "Éxito",
+                                JOptionPane.INFORMATION_MESSAGE);
+
+                        ventanaActual.dispose();
+
+                        // ⭐ Actualizar el contador SOLO UNA VEZ
+                        actualizarContadorComentarios(idReporte);
+                    } else {
+                        btnEnviar.setEnabled(true);
+                        btnEnviar.setText("<html><font face='Arial'>Enviar</font><font face='Segoe UI Emoji'> ➤ </font></html>");
+                        JOptionPane.showMessageDialog(ventanaActual,
+                                "Error al enviar el comentario: " +
+                                        (response != null ? response.getMensaje() : "Error desconocido"),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> {
+                    btnEnviar.setEnabled(true);
+                    btnEnviar.setText("<html><font face='Arial'>Enviar</font><font face='Segoe UI Emoji'> ➤ </font></html>");
+                    JOptionPane.showMessageDialog(ventanaActual,
+                            "Error al conectar con el servidor: " + ex.getMessage(),
+                            "Error de Conexión",
+                            JOptionPane.ERROR_MESSAGE);
+                });
+            }
+        }).start();
+    }
+
+// ============================================
+    // MÉTOD0 ACTUALIZADO: actualizarContadorComentarios
+// ============================================
+    private void actualizarContadorComentarios(Long idReporte) {
+        boolean actualizado = false;
+
+        // ⭐ SOLO actualizar en todosLosReportes (la fuente de verdad)
+        for (Map<?, ?> reporteMap : todosLosReportes) {
+            if (reporteMap instanceof Map) {
+                Map<String, Object> reporteMutable = (Map<String, Object>) reporteMap;
+                Map<?, ?> reporteView = reporteMutable.get("reporteView") instanceof Map
+                        ? (Map<?, ?>) reporteMutable.get("reporteView")
+                        : null;
+
+                if (reporteView instanceof Map) {
+                    Map<String, Object> reporteViewMutable = (Map<String, Object>) reporteView;
+                    Long idReporteActual = reporteViewMutable.get("idreporte") != null
+                            ? ((Number) reporteViewMutable.get("idreporte")).longValue()
+                            : null;
+
+                    if (idReporteActual != null && idReporteActual.equals(idReporte)) {
+                        Long totalComentarios = reporteViewMutable.get("totalcomentarios") != null
+                                ? ((Number) reporteViewMutable.get("totalcomentarios")).longValue()
+                                : 0L;
+
+                        Long nuevoTotal = totalComentarios + 1;
+
+                        // Actualizar el mapa
+                        reporteViewMutable.put("totalcomentarios", nuevoTotal);
+
+                        // ⭐ Actualizar la UI solo UNA vez
+                        if (!actualizado) {
+                            actualizarBotónComentariosEnUI(idReporte, nuevoTotal);
+                            actualizado = true;
+                        }
+
+                        break; // ⭐ Salir del bucle
+                    }
+                }
+            }
+        }
+
+        // ⭐ Actualizar reportesFiltrados solo si es necesario mostrarlos
+        // (esto se hará automáticamente cuando se vuelva a aplicar filtros)
+        if (actualizado) {
+            // Forzar re-aplicación de filtros para sincronizar reportesFiltrados
+            SwingUtilities.invokeLater(() -> {
+                aplicarFiltrosYMostrar();
+            });
+        }
+    }
+
+// ============================================
+// MÉTOD0 MEJORADO: actualizarBotónComentariosEnUI
+// ============================================
+private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
+    for (Component comp : panelListaReportes.getComponents()) {
+        if (comp instanceof JPanel) {
+            JPanel tarjeta = (JPanel) comp;
+
+            // Verificar si esta tarjeta corresponde al reporte
+            Object idReporteProperty = tarjeta.getClientProperty("idReporte");
+
+            if (idReporteProperty instanceof Long && ((Long) idReporteProperty).equals(idReporte)) {
+                // Buscar el botón dentro de la tarjeta
+                JButton btnComentarios = encontrarBotonComentarios(tarjeta, idReporte);
+
+                if (btnComentarios != null) {
+                    btnComentarios.setText("Ver comentarios (" + nuevoTotal + ")");
+
+                    // Forzar actualización visual completa
+                    btnComentarios.invalidate();
+                    btnComentarios.revalidate();
+                    btnComentarios.repaint();
+
+                    tarjeta.invalidate();
+                    tarjeta.revalidate();
+                    tarjeta.repaint();
+
+                    panelListaReportes.invalidate();
+                    panelListaReportes.revalidate();
+                    panelListaReportes.repaint();
+
+                    return; // ⭐ Salir después de encontrar y actualizar
+                }
+            }
+        }
+    }
+}
+
+    // ============================================
+// ENCONTRAR BOTÓN COMENTARIOS (RECURSIVO)
+// ============================================
+    private JButton encontrarBotonComentarios(Container container, Long idReporteBuscado) {
+        // Buscar recursivamente en todos los componentes
+        for (Component comp : container.getComponents()) {
+            if (comp instanceof JButton) {
+                JButton btn = (JButton) comp;
+                String texto = btn.getText();
+                if (texto != null && texto.startsWith("Ver comentarios")) {
+                    return btn;
+                }
+            } else if (comp instanceof Container) {
+                // Buscar recursivamente en contenedores hijos
+                JButton result = encontrarBotonComentarios((Container) comp, idReporteBuscado);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
+    }
+
+    // ============================================
+// ELIMINAR COMENTARIO
+// ============================================
+    private void eliminarComentario(Long idComentario, ComentarioContext context, JDialog ventanaActual) {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ApiResponse<?> response = api.eliminarComentario(idComentario, usuarioLogueado.getIdusuario());
+
+                SwingUtilities.invokeLater(() -> {
+                    if (response != null && response.isSuccess()) {
+                        JOptionPane.showMessageDialog(
+                                ventanaActual,
+                                "Comentario eliminado exitosamente",
+                                "Éxito",
+                                JOptionPane.INFORMATION_MESSAGE
+                        );
+
+                        // ⭐ NUEVO: Decrementar el contador de comentarios
+                        decrementarContadorComentarios(context.idReporte);
+
+                        // Cerrar ventana actual y recargar el nivel actual
+                        ventanaActual.dispose();
+                        cargarYMostrarComentarios(context.idReporte, context.idComentarioPadre);
+                    } else {
+                        JOptionPane.showMessageDialog(
+                                ventanaActual,
+                                "Error al eliminar el comentario: " +
+                                        (response != null ? response.getMensaje() : "Error desconocido"),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                });
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() ->
+                        JOptionPane.showMessageDialog(
+                                ventanaActual,
+                                "Error al conectar con el servidor: " + ex.getMessage(),
+                                "Error de Conexión",
+                                JOptionPane.ERROR_MESSAGE
+                        )
+                );
+            }
+        }).start();
+    }
+
+    private void decrementarContadorComentarios(Long idReporte) {
+        boolean actualizado = false;
+
+        // Actualizar en todosLosReportes (la fuente de verdad)
+        for (Map<?, ?> reporteMap : todosLosReportes) {
+            if (reporteMap instanceof Map) {
+                Map<String, Object> reporteMutable = (Map<String, Object>) reporteMap;
+                Map<?, ?> reporteView = reporteMutable.get("reporteView") instanceof Map
+                        ? (Map<?, ?>) reporteMutable.get("reporteView")
+                        : null;
+
+                if (reporteView instanceof Map) {
+                    Map<String, Object> reporteViewMutable = (Map<String, Object>) reporteView;
+                    Long idReporteActual = reporteViewMutable.get("idreporte") != null
+                            ? ((Number) reporteViewMutable.get("idreporte")).longValue()
+                            : null;
+
+                    if (idReporteActual != null && idReporteActual.equals(idReporte)) {
+                        Long totalComentarios = reporteViewMutable.get("totalcomentarios") != null
+                                ? ((Number) reporteViewMutable.get("totalcomentarios")).longValue()
+                                : 0L;
+
+                        // No permitir valores negativos
+                        Long nuevoTotal = Math.max(0L, totalComentarios - 1);
+
+                        // Actualizar el mapa
+                        reporteViewMutable.put("totalcomentarios", nuevoTotal);
+
+                        // Actualizar la UI solo UNA vez
+                        if (!actualizado) {
+                            actualizarBotónComentariosEnUI(idReporte, nuevoTotal);
+                            actualizado = true;
+                        }
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Forzar re-aplicación de filtros para sincronizar reportesFiltrados
+        if (actualizado) {
+            SwingUtilities.invokeLater(() -> {
+                aplicarFiltrosYMostrar();
+            });
+        }
+    }
+
+    // ============================================
 // REGRESAR AL NIVEL ANTERIOR
 // ============================================
     private void regresarAlNivelAnterior(ComentarioContext context) {
@@ -1257,9 +1669,10 @@ public class Reportes extends JFrame {
         // Contenido con scroll
         JScrollPane scrollContenido = crearScrollContenido(contenido, esRaiz ? 120 : 100);
 
-        // Panel de acciones
+        // Panel de acciones (pasamos idUsuario para verificar si es del usuario actual)
         JPanel panelAcciones = crearPanelAcciones(
                 idComentario,
+                idUsuario, // ⭐ Nuevo parámetro
                 numRespuestas,
                 context,
                 ventanaActual
@@ -1369,7 +1782,8 @@ public class Reportes extends JFrame {
     // ============================================
 // CREAR PANEL DE ACCIONES
 // ============================================
-    private JPanel crearPanelAcciones(Long idComentario, int numRespuestas, ComentarioContext context, JDialog ventanaActual) {
+    private JPanel crearPanelAcciones(Long idComentario, Long idUsuarioComentario, int numRespuestas,
+                                      ComentarioContext context, JDialog ventanaActual) {
         JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         panelAcciones.setBackground(Color.WHITE);
         panelAcciones.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -1413,6 +1827,57 @@ public class Reportes extends JFrame {
         });
 
         panelAcciones.add(btnResponder);
+
+        // Botón "Eliminar" (solo si el comentario es del usuario actual)
+        if (idUsuarioComentario != null &&
+                idUsuarioComentario.equals(usuarioLogueado.getIdusuario())) {
+
+            // Separador visual
+            JLabel lblSeparador = new JLabel(" • ");
+            lblSeparador.setFont(new Font("Arial", Font.PLAIN, 12));
+            lblSeparador.setForeground(Color.LIGHT_GRAY);
+            panelAcciones.add(lblSeparador);
+
+            JButton btnEliminar = new JButton("<html><font face='Segoe UI Emoji'> 🗑️ </font><font face='Arial'>Eliminar</font></html>");
+            btnEliminar.setFont(new Font("Arial", Font.PLAIN, 12));
+            btnEliminar.setForeground(new Color(220, 53, 69)); // Rojo
+            btnEliminar.setBorderPainted(false);
+            btnEliminar.setContentAreaFilled(false);
+            btnEliminar.setFocusPainted(false);
+            btnEliminar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+            // Efecto hover
+            btnEliminar.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    btnEliminar.setForeground(new Color(180, 30, 45)); // Rojo más oscuro
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    btnEliminar.setForeground(new Color(220, 53, 69));
+                }
+            });
+
+            btnEliminar.addActionListener(e -> {
+                // Confirmar eliminación
+                int confirmacion = JOptionPane.showConfirmDialog(
+                        ventanaActual,
+                        "¿Estás seguro de que deseas eliminar este comentario?\n" +
+                                (numRespuestas > 0 ? "ADVERTENCIA: Este comentario tiene " + numRespuestas +
+                                        " respuesta" + (numRespuestas > 1 ? "s" : "") + " que también se eliminarán." : ""),
+                        "Confirmar eliminación",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+                if (confirmacion == JOptionPane.YES_OPTION) {
+                    eliminarComentario(idComentario, context, ventanaActual);
+                }
+            });
+
+            panelAcciones.add(btnEliminar);
+        }
 
         return panelAcciones;
     }
@@ -1611,17 +2076,7 @@ public class Reportes extends JFrame {
         }).start();
     }
 
-// ============================================
-// ELIMINAR CÓDIGO DUPLICADO ANTERIOR
-// ============================================
-// Eliminar las siguientes variables de instancia:
-// - private Boolean abrirVentanaPadre = false;
-// - private Boolean cerrarVentanaRespuestas = true;
-//
-// Eliminar los siguientes métodos duplicados:
-// - abrirVentanaRespuestas (ambas versiones)
-// - cargarYAbrirVentanaRespuestas
-// - crearTarjetaRespuesta (usa crearTarjetaComentario unificado)
+    // --------------------------------
 
     // Métod0 auxiliar para obtener el nombre del usuario
     private String obtenerNombreUsuario(Long idUsuario) {
