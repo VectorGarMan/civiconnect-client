@@ -11,6 +11,7 @@ dependency-reduced-pom.xml
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/
+./.idea/misc.xml
 *.iws
 *.iml
 *.ipr
@@ -39,3 +40,4 @@ build/
 
 ### Mac OS ###
 .DS_Store
+/.idea/
