@@ -15,6 +15,8 @@ public class ClienteAPI {
 
     private static final String BASE_URL = "http://localhost:8080/api";
 
+//    private static final String BASE_URL = "https://civiconnect-api.onrender.com/api";
+
     // Gson configurado para reutilizar
     private final Gson gson = new GsonBuilder()
             .registerTypeAdapter(LocalDate.class,
@@ -45,6 +47,35 @@ public class ClienteAPI {
         try (HttpClient client = HttpClient.newHttpClient()) {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(new URI(BASE_URL + "/usuarios/login"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        // Parsear la respuesta
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    public ApiResponse<?> crearActualizarComentario(Long idusuario, Long idreporte, Long idcomentariopadre, String contenido) throws Exception {
+        // Crear el objeto LoginRequest
+        ComentarioRequest comentarioRequest = new ComentarioRequest();
+        comentarioRequest.setIdusuario(idusuario);
+        comentarioRequest.setIdreporte(idreporte);
+        comentarioRequest.setIdcomentariopadre(idcomentariopadre);
+        comentarioRequest.setContenido(contenido);
+
+        // Convertir el objeto a JSON
+        String jsonBody = gson.toJson(comentarioRequest);
+
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/reporte/comentario/crearActualizar"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                     .build();

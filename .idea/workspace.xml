@@ -7,7 +7,6 @@
     <list default="true" id="1f6023ce-b786-41f8-a506-a31e3b556676" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/api/ClienteAPI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/api/ClienteAPI.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/dto/ApiResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/dto/ApiResponse.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Reportes.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Reportes.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -54,7 +53,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "enhancement",
+    "git-widget-placeholder": "main",
     "last_opened_file_path": "C:/code/intellij/civiconnect-client/src/main/java/com/vectorgarman/dto",
     "project.structure.last.edited": "Project",
     "project.structure.proportion": "0.15",
