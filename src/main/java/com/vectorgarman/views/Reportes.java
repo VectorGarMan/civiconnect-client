@@ -141,6 +141,7 @@ public class Reportes extends JFrame {
         // Botón de perfil
         btnPerfil = new JButton("👤");
         btnPerfil.setPreferredSize(new Dimension(45, 35));
+        btnPerfil.addActionListener(e -> abrirVentanaPerfil());
 
         botonesPanel.add(btnLimpiarFiltros);
         botonesPanel.add(lblEspaciador);
@@ -4139,5 +4140,12 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                 break;
             }
         }
+    }
+
+    // ============================================
+    // ABRIR VENTANA DE PERFIL
+    // ============================================
+    private void abrirVentanaPerfil() {
+        new Perfil(usuarioLogueado);
     }
 }
