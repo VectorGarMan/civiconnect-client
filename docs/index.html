@@ -15,7 +15,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
         }
 
         .container {
@@ -26,7 +26,7 @@
 
         header {
             text-align: center;
-            padding: 60px 20px;
+            padding: 30px 20px 60px 20px;
             color: white;
         }
 
@@ -65,15 +65,15 @@
         }
 
         .section h2 {
-            color: #667eea;
+            color: #414345;
             font-size: 2rem;
             margin-bottom: 25px;
             padding-bottom: 15px;
-            border-bottom: 3px solid #667eea;
+            border-bottom: 3px solid #414345;
         }
 
         .section h3 {
-            color: #764ba2;
+            color: #232526;
             font-size: 1.5rem;
             margin-top: 30px;
             margin-bottom: 15px;
@@ -87,11 +87,11 @@
         }
 
         .context-box {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
             padding: 30px;
             border-radius: 15px;
             margin: 30px 0;
-            border-left: 5px solid #667eea;
+            border-left: 5px solid #414345;
         }
 
         .benefits-list {
@@ -110,7 +110,7 @@
             content: "✓";
             position: absolute;
             left: 0;
-            color: #667eea;
+            color: #414345;
             font-size: 1.5rem;
             font-weight: bold;
         }
@@ -123,12 +123,12 @@
         }
 
         .link-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
             padding: 30px;
             border-radius: 15px;
             text-align: center;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
         .link-card:hover {
@@ -150,7 +150,7 @@
         .link-card a {
             display: inline-block;
             background: white;
-            color: #667eea;
+            color: #232526;
             padding: 12px 30px;
             border-radius: 25px;
             text-decoration: none;
@@ -182,7 +182,7 @@
         }
 
         .highlight {
-            background: linear-gradient(120deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(120deg, #232526 0%, #414345 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -237,10 +237,11 @@
 <body>
 <div class="container">
     <header>
-        <img src="CiviConnectCut.png" alt="CiviConnect Logo" style="max-width: 400px; width: 100%; height: auto; margin-bottom: 20px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
+        <img src="CiviConnectCut.png" alt="CiviConnect Logo" style="max-width: 400px; width: 100%; height: auto; margin-bottom: 20px; margin-top: 0; display: block; filter: brightness(0) invert(1) drop-shadow(0 4px 6px rgba(0,0,0,0.5));">
         <p>Plataforma Digital de Participación Ciudadana</p>
         <p class="subtitle">Conectando ciudadanos con gobiernos locales para construir comunidades mejores</p>
     </header>
+
     <main>
         <!-- Introducción -->
         <section class="section">
@@ -350,7 +351,7 @@
                 <p><strong>Tecnologías Principales:</strong></p>
                 <ul class="benefits-list">
                     <li>Java 21+ (Backend y Frontend)</li>
-                    <li>Spring Boot 3 (Framework Backend)</li>
+                    <li>Spring Boot 3.5+ (Framework Backend)</li>
                     <li>Swing (Framework GUI)</li>
                     <li>PostgreSQL (Base de datos)</li>
                     <li>Maven (Gestión de dependencias)</li>
