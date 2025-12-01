@@ -60,6 +60,14 @@ public class Reportes extends JFrame {
         });
     }
 
+    /**
+     * Verifica si el usuario actual es gubernamental
+     * @return true si es empleado gubernamental verificado, false en caso contrario
+     */
+    private boolean esUsuarioGubernamental() {
+        return SessionManager.getInstance().isUsuarioGubernamental();
+    }
+
     /** HEADER **/
     private void inicializarHeader() {
         JPanel header = new JPanel(new BorderLayout());
@@ -191,7 +199,10 @@ public class Reportes extends JFrame {
         btnPerfil.setPreferredSize(new Dimension(45, 35));
         btnPerfil.addActionListener(e -> abrirVentanaPerfil());
 
-        botonesPanel.add(btnCrearReporte);
+        // ⭐ VALIDACIÓN: Ocultar botón de crear reporte si es usuario gubernamental
+        if (!esUsuarioGubernamental()) {
+            botonesPanel.add(btnCrearReporte);
+        }
         botonesPanel.add(btnPerfil);
 
         panelCentral.add(botonesPanel, BorderLayout.EAST);
@@ -1001,8 +1012,11 @@ public class Reportes extends JFrame {
         panelSocial.add(btnComentarios);
         panelSocial.add(btnCrearComentario);
 
-        // Botón de editar (solo si el reporte es del usuario logueado)
-        if (idusuariocreador != null && idusuariocreador.equals(usuarioLogueado.getIdusuario())) {
+        // Botón de editar (si el reporte es del usuario logueado O si es usuario gubernamental)
+        boolean esCreador = idusuariocreador != null && idusuariocreador.equals(usuarioLogueado.getIdusuario());
+        boolean esGubernamental = esUsuarioGubernamental();
+        
+        if (esCreador || esGubernamental) {
             JButton btnEditar = new JButton("<html><font face='Segoe UI Emoji'> ✏ </font><font face='Arial'>Editar</font></html> ");
             btnEditar.setFocusable(false);
             btnEditar.setFont(new Font("Arial", Font.PLAIN, 12));
@@ -1012,7 +1026,13 @@ public class Reportes extends JFrame {
             btnEditar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
             btnEditar.addActionListener(e -> {
-                abrirVentanaEditarReporte(reporteMap);
+                // Si es gubernamental pero no es el creador, abrir ventana especial
+                if (esGubernamental && !esCreador) {
+                    abrirVentanaEditarReporteGubernamental(reporteMap);
+                } else {
+                    // Si es el creador, abrir ventana normal
+                    abrirVentanaEditarReporte(reporteMap);
+                }
             });
 
             panelSocial.add(Box.createHorizontalStrut(10));
@@ -4014,6 +4034,365 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
         });
 
         ventanaEditar.setVisible(true);
+    }
+
+    // ============================================
+    // ABRIR VENTANA EDITAR REPORTE (SOLO ESTADO) - GUBERNAMENTAL
+    // ============================================
+    private void abrirVentanaEditarReporteGubernamental(Map<?, ?> reporteMap) {
+        // Extraer datos del reporte
+        Map<?, ?> reporteView = reporteMap.get("reporteView") instanceof Map ? (Map<?, ?>) reporteMap.get("reporteView") : null;
+        if (reporteView == null) {
+            JOptionPane.showMessageDialog(this, "Error: No se pudo cargar el reporte", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        Long idReporte = reporteView.get("idreporte") != null ? ((Number) reporteView.get("idreporte")).longValue() : null;
+        String tituloActual = reporteView.get("titulo") != null ? reporteView.get("titulo").toString() : "";
+        String descripcionActual = reporteView.get("descripcion") != null ? reporteView.get("descripcion").toString() : "";
+        String solucionActual = reporteView.get("solucionpropuesta") != null ? reporteView.get("solucionpropuesta").toString() : "";
+        String estadoReporteActual = reporteView.get("estadoreporte") != null ? reporteView.get("estadoreporte").toString() : "";
+        String prioridadActual = reporteView.get("prioridad") != null ? reporteView.get("prioridad").toString() : "";
+        String creador = reporteView.get("creador") != null ? reporteView.get("creador").toString() : "Anónimo";
+        String fechaCreacion = reporteView.get("fechacreacion") != null ? reporteView.get("fechacreacion").toString() : "";
+
+        JDialog ventanaEditar = new JDialog(this, "Cambiar Estado del Reporte #" + idReporte, true);
+        ventanaEditar.setSize(700, 650);
+        ventanaEditar.setLocationRelativeTo(this);
+        ventanaEditar.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+        // Panel principal con scroll
+        JPanel panelPrincipal = new JPanel();
+        panelPrincipal.setLayout(new BoxLayout(panelPrincipal, BoxLayout.Y_AXIS));
+        panelPrincipal.setBackground(new Color(245, 245, 245));
+        panelPrincipal.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // ========== TARJETA ESTILO REPORTE ==========
+        JPanel tarjeta = new JPanel();
+        tarjeta.setLayout(new BorderLayout());
+        tarjeta.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+        tarjeta.setMaximumSize(new Dimension(650, Integer.MAX_VALUE));
+        tarjeta.setBackground(Color.WHITE);
+        tarjeta.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Barra de color superior (se actualizará según el estado seleccionado)
+        JPanel barraColor = new JPanel();
+        barraColor.setPreferredSize(new Dimension(650, 30));
+        String colorEstadoActual = reporteView.get("colorestado") != null ? reporteView.get("colorestado").toString() : "#FFA500";
+        try {
+            barraColor.setBackground(Color.decode(colorEstadoActual));
+        } catch (Exception e) {
+            barraColor.setBackground(new Color(255, 165, 0));
+        }
+        tarjeta.add(barraColor, BorderLayout.NORTH);
+
+        // Panel de contenido
+        JPanel contenido = new JPanel();
+        contenido.setLayout(new BoxLayout(contenido, BoxLayout.Y_AXIS));
+        contenido.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        contenido.setBackground(Color.WHITE);
+
+        // Información del usuario y fecha (solo lectura)
+        JLabel lblCreadorFecha = new JLabel("@ " + creador + " • " + fechaCreacion);
+        lblCreadorFecha.setFont(new Font("Arial", Font.BOLD, 13));
+        lblCreadorFecha.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Aviso para usuario gubernamental
+        JPanel panelAviso = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        panelAviso.setBackground(new Color(255, 243, 205));
+        panelAviso.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(255, 193, 7), 1),
+            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        ));
+        panelAviso.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panelAviso.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        
+        JLabel lblAviso = new JLabel("<html><b>⚠️ Modo Gubernamental:</b> Solo puede cambiar el estado del reporte</html>");
+        lblAviso.setFont(new Font("Arial", Font.PLAIN, 12));
+        lblAviso.setForeground(new Color(133, 100, 4));
+        panelAviso.add(lblAviso);
+
+        // Estado del reporte (EDITABLE)
+        JPanel panelEstado = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        panelEstado.setBackground(Color.WHITE);
+        panelEstado.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        JLabel lblEstadoLabel = new JLabel("Estado del Reporte: ");
+        lblEstadoLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        
+        JComboBox<Map<?, ?>> comboEstadoReporte = new JComboBox<>();
+        comboEstadoReporte.setFont(new Font("Arial", Font.BOLD, 13));
+        comboEstadoReporte.setPreferredSize(new Dimension(150, 30));
+        
+        // Renderer para el combo
+        DefaultListCellRenderer renderer = new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Map<?, ?> map) {
+                    Object nombre = map.get("nombre");
+                    setText(nombre != null ? nombre.toString() : "");
+                }
+                return this;
+            }
+        };
+        comboEstadoReporte.setRenderer(renderer);
+        
+        panelEstado.add(lblEstadoLabel);
+        panelEstado.add(comboEstadoReporte);
+
+        // Listener para actualizar el color de la barra
+        comboEstadoReporte.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED && comboEstadoReporte.getSelectedItem() != null) {
+                Map<?, ?> estadoSel = (Map<?, ?>) comboEstadoReporte.getSelectedItem();
+                String color = estadoSel.get("color") != null ? estadoSel.get("color").toString() : "#FFA500";
+                try {
+                    barraColor.setBackground(Color.decode(color));
+                } catch (Exception ex) {
+                    barraColor.setBackground(new Color(255, 165, 0));
+                }
+            }
+        });
+
+        // Prioridad (SOLO LECTURA)
+        JLabel lblPrioridad = new JLabel("Prioridad: " + prioridadActual);
+        lblPrioridad.setFont(new Font("Arial", Font.PLAIN, 13));
+        lblPrioridad.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Título (SOLO LECTURA)
+        JLabel lblTituloLabel = new JLabel("Título:");
+        lblTituloLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        lblTituloLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JTextArea txtTitulo = new JTextArea(tituloActual);
+        txtTitulo.setFont(new Font("Arial", Font.BOLD, 13));
+        txtTitulo.setEditable(false);
+        txtTitulo.setLineWrap(true);
+        txtTitulo.setWrapStyleWord(true);
+        txtTitulo.setBackground(new Color(240, 240, 240));
+        txtTitulo.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.GRAY, 1),
+            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        txtTitulo.setAlignmentX(Component.LEFT_ALIGNMENT);
+        txtTitulo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
+        // Descripción (SOLO LECTURA)
+        JLabel lblDescripcionLabel = new JLabel("Descripción:");
+        lblDescripcionLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        lblDescripcionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JTextArea txtDescripcion = new JTextArea(descripcionActual);
+        txtDescripcion.setLineWrap(true);
+        txtDescripcion.setWrapStyleWord(true);
+        txtDescripcion.setEditable(false);
+        txtDescripcion.setFont(new Font("Arial", Font.PLAIN, 11));
+        txtDescripcion.setBackground(new Color(240, 240, 240));
+        txtDescripcion.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        JScrollPane scrollDescripcion = new JScrollPane(txtDescripcion);
+        scrollDescripcion.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
+        scrollDescripcion.setPreferredSize(new Dimension(600, 80));
+        scrollDescripcion.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Solución propuesta (SOLO LECTURA)
+        JLabel lblSolucionLabel = new JLabel("Solución propuesta:");
+        lblSolucionLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        lblSolucionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JTextArea txtSolucion = new JTextArea(solucionActual);
+        txtSolucion.setLineWrap(true);
+        txtSolucion.setWrapStyleWord(true);
+        txtSolucion.setEditable(false);
+        txtSolucion.setFont(new Font("Arial", Font.PLAIN, 11));
+        txtSolucion.setBackground(new Color(240, 240, 240));
+        txtSolucion.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        JScrollPane scrollSolucion = new JScrollPane(txtSolucion);
+        scrollSolucion.setBorder(BorderFactory.createDashedBorder(Color.GRAY));
+        scrollSolucion.setPreferredSize(new Dimension(600, 80));
+        scrollSolucion.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Agregar componentes al contenido
+        contenido.add(lblCreadorFecha);
+        contenido.add(Box.createRigidArea(new Dimension(0, 10)));
+        contenido.add(panelAviso);
+        contenido.add(Box.createRigidArea(new Dimension(0, 15)));
+        contenido.add(panelEstado);
+        contenido.add(Box.createRigidArea(new Dimension(0, 10)));
+        contenido.add(lblPrioridad);
+        contenido.add(Box.createRigidArea(new Dimension(0, 10)));
+        contenido.add(lblTituloLabel);
+        contenido.add(Box.createRigidArea(new Dimension(0, 3)));
+        contenido.add(txtTitulo);
+        contenido.add(Box.createRigidArea(new Dimension(0, 10)));
+        contenido.add(lblDescripcionLabel);
+        contenido.add(Box.createRigidArea(new Dimension(0, 3)));
+        contenido.add(scrollDescripcion);
+        contenido.add(Box.createRigidArea(new Dimension(0, 10)));
+        contenido.add(lblSolucionLabel);
+        contenido.add(Box.createRigidArea(new Dimension(0, 3)));
+        contenido.add(scrollSolucion);
+
+        tarjeta.add(contenido, BorderLayout.CENTER);
+        
+        panelPrincipal.add(tarjeta);
+        panelPrincipal.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        // Botones
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        panelBotones.setBackground(new Color(245, 245, 245));
+        panelBotones.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panelBotones.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
+        JButton btnCancelar = new JButton("Cancelar");
+        btnCancelar.setFont(new Font("Arial", Font.PLAIN, 13));
+        btnCancelar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnCancelar.addActionListener(e -> ventanaEditar.dispose());
+
+        JButton btnGuardar = new JButton("Guardar Estado");
+        btnGuardar.setFont(new Font("Arial", Font.BOLD, 13));
+        btnGuardar.setBackground(new Color(25, 135, 84));
+        btnGuardar.setForeground(Color.WHITE);
+        btnGuardar.setFocusPainted(false);
+        btnGuardar.setBorderPainted(false);
+        btnGuardar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnGuardar.setPreferredSize(new Dimension(170, 35));
+
+        btnGuardar.addActionListener(e -> {
+            // Validación
+            if (comboEstadoReporte.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(ventanaEditar, "Debe seleccionar un estado", "Campo requerido", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Obtener el nuevo estado
+            Map<?, ?> estadoReporteSeleccionado = (Map<?, ?>) comboEstadoReporte.getSelectedItem();
+            Long idEstadoReporteNuevo = ((Number) estadoReporteSeleccionado.get("idestadoreporte")).longValue();
+
+            btnGuardar.setEnabled(false);
+            btnGuardar.setText("Guardando...");
+
+            // Enviar actualización SOLO del estado usando editarReporte
+            new Thread(() -> {
+                try {
+                    ClienteAPI api = new ClienteAPI();
+                    
+                    // Obtener datos actuales del reporte para mantenerlos
+                    Long idusuariocreador = reporteView.get("idusuariocreador") != null ?
+                        ((Number) reporteView.get("idusuariocreador")).longValue() : null;
+                    Long idcolonia = reporteView.get("idcolonia") != null ?
+                        ((Number) reporteView.get("idcolonia")).longValue() : null;
+                    Long idnivelprioridad = reporteView.get("idnivelprioridad") != null ?
+                        ((Number) reporteView.get("idnivelprioridad")).longValue() : null;
+                    Long idcategoria = reporteView.get("idcategoria") != null ?
+                        ((Number) reporteView.get("idcategoria")).longValue() : null;
+                    String calle = reporteView.get("calle") != null ? reporteView.get("calle").toString() : "";
+                    String referencia = reporteView.get("referencia") != null ? reporteView.get("referencia").toString() : "";
+                    
+                    // Llamar a editarReporte pero solo cambiando el estado
+                    ApiResponse<?> response = api.editarReporte(
+                        idReporte,
+                        idusuariocreador,
+                        idcolonia,
+                        idnivelprioridad,
+                        idEstadoReporteNuevo, // ⭐ SOLO ESTE CAMPO CAMBIA
+                        idcategoria,
+                        tituloActual,
+                        descripcionActual,
+                        solucionActual,
+                        calle,
+                        referencia,
+                        new ArrayList<>(), // Sin nuevas evidencias
+                        new ArrayList<>()  // Sin eliminar evidencias
+                    );
+
+                    SwingUtilities.invokeLater(() -> {
+                        if (response != null && response.isSuccess()) {
+                            // Actualizar el reporte localmente
+                            Object dataObj = response.getData();
+                            if (dataObj instanceof Map<?, ?> reporteActualizado) {
+                                actualizarReporteEnLista(idReporte, reporteActualizado);
+                            }
+                            
+                            JOptionPane.showMessageDialog(ventanaEditar,
+                                    "Estado del reporte actualizado exitosamente",
+                                    "Éxito",
+                                    JOptionPane.INFORMATION_MESSAGE);
+                            ventanaEditar.dispose();
+                            
+                            // Refrescar la vista
+                            aplicarFiltrosYMostrar();
+                        } else {
+                            btnGuardar.setEnabled(true);
+                            btnGuardar.setText("Guardar Estado");
+                            JOptionPane.showMessageDialog(ventanaEditar,
+                                    "Error al actualizar el estado: " + (response != null ? response.getMensaje() : "Error desconocido"),
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE);
+                        }
+                    });
+                } catch (Exception ex) {
+                    SwingUtilities.invokeLater(() -> {
+                        btnGuardar.setEnabled(true);
+                        btnGuardar.setText("Guardar Estado");
+                        JOptionPane.showMessageDialog(ventanaEditar,
+                                "Error al conectar con el servidor: " + ex.getMessage(),
+                                "Error de Conexión",
+                                JOptionPane.ERROR_MESSAGE);
+                    });
+                }
+            }).start();
+        });
+
+        panelBotones.add(btnCancelar);
+        panelBotones.add(btnGuardar);
+        panelPrincipal.add(panelBotones);
+
+        // Scroll
+        JScrollPane scrollPane = new JScrollPane(panelPrincipal);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setBorder(null);
+
+        ventanaEditar.add(scrollPane);
+
+        // Cargar estados de reporte y pre-seleccionar el actual
+        cargarEstadosReporteGubernamental(comboEstadoReporte, estadoReporteActual);
+
+        ventanaEditar.setVisible(true);
+    }
+
+    // ============================================
+    // CARGAR ESTADOS DE REPORTE PARA GUBERNAMENTAL
+    // ============================================
+    private void cargarEstadosReporteGubernamental(JComboBox<Map<?, ?>> comboEstadoReporte, String estadoActual) {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ApiResponse<?> responseEstadosReporte = api.obtenerEstadosDeReporte();
+                
+                if ("OK".equals(responseEstadosReporte.getStatus()) && responseEstadosReporte.getData() instanceof List<?> estadosReporte) {
+                    SwingUtilities.invokeLater(() -> {
+                        comboEstadoReporte.removeAllItems();
+                        for (Object item : estadosReporte) {
+                            if (item instanceof Map<?, ?>) {
+                                comboEstadoReporte.addItem((Map<?, ?>) item);
+                            }
+                        }
+                        // Pre-seleccionar estado actual
+                        seleccionarItemPorNombre(comboEstadoReporte, estadoActual);
+                    });
+                }
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() ->
+                        JOptionPane.showMessageDialog(this,
+                                "Error al cargar estados: " + ex.getMessage(),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE));
+            }
+        }).start();
     }
 
     // ============================================

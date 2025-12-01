@@ -2,26 +2,78 @@
 
 Esta guía te ayudará a instalar y ejecutar la aplicación de escritorio CiviConnect en **Windows** y **macOS**.
 
-**CiviConnect Cliente** es una aplicación de escritorio Java Swing que se conecta a un servidor remoto. Cuando ejecutes la aplicación por primera vez, se te pedirá que ingreses la URL del servidor donde está alojada la API de CiviConnect.
+**CiviConnect Cliente** es una aplicación de escritorio Java Swing que se conecta a un servidor remoto preconfigurado.
+
+## 🚀 Instalación Rápida (Recomendado)
+
+### Para Usuarios Finales
+
+Si recibiste una carpeta con el archivo `civiconnect-client.jar` y los scripts de ejecución:
+
+#### Windows
+1. Copia `scripts-instalacion/ejecutar-windows.bat` a la carpeta donde está el JAR
+2. Haz doble clic en `ejecutar-windows.bat`
+3. El script verificará e instalará Java automáticamente si es necesario
+4. La aplicación se iniciará automáticamente
+
+#### macOS
+1. Copia `scripts-instalacion/ejecutar-mac.sh` a la carpeta donde está el JAR
+2. Abre Terminal en esa carpeta
+3. Ejecuta: `./ejecutar-mac.sh`
+4. El script verificará e instalará Java automáticamente si es necesario
+5. La aplicación se iniciará automáticamente
+
+**Ver [scripts-instalacion/README-USUARIO.md](scripts-instalacion/README-USUARIO.md) para instrucciones detalladas para usuarios finales.**
+
+---
+
+### Para Desarrolladores
+
+Si tienes el código fuente completo y quieres compilar:
+
+#### Windows
+1. Copia `scripts-instalacion/install-windows.bat` a la raíz del proyecto
+2. Haz doble clic en `install-windows.bat`
+3. El script instalará Java, Maven y compilará el proyecto
+4. La aplicación se iniciará automáticamente
+
+#### macOS
+1. Copia `scripts-instalacion/install-mac.sh` a la raíz del proyecto
+2. Abre Terminal en la raíz del proyecto
+3. Ejecuta: `./install-mac.sh`
+4. El script instalará Java, Maven y compilará el proyecto
+5. La aplicación se iniciará automáticamente
+
+**Todos los scripts están organizados en la carpeta [scripts-instalacion/](scripts-instalacion/)**
+
+---
 
 ## Tabla de Contenidos
-1. [Requisitos Previos](#requisitos-previos)
-2. [Instalación](#instalación)
-3. [Ejecutar la Aplicación](#ejecutar-la-aplicación)
-4. [Usar la Aplicación](#usar-la-aplicación)
-5. [Solución de Problemas](#solución-de-problemas)
+1. [Instalación Rápida](#-instalación-rápida-recomendado)
+2. [Requisitos Previos](#requisitos-previos)
+3. [Instalación Manual](#instalación-manual)
+4. [Ejecutar la Aplicación](#ejecutar-la-aplicación)
+5. [Usar la Aplicación](#usar-la-aplicación)
+6. [Solución de Problemas](#solución-de-problemas)
 
 ---
 
 ## Requisitos Previos
 
-### Software Requerido
+### Para Usuarios Finales (con JAR precompilado)
 
-Solo necesitas tener **Java 25** o superior instalado en tu computadora.
+- **Ninguno**: Los scripts de instalación (`ejecutar-windows.bat` o `ejecutar-mac.sh`) instalarán Java automáticamente si es necesario.
+- **Conexión a Internet**: Necesaria para instalar Java (solo la primera vez) y para usar la aplicación.
+
+### Para Desarrolladores (compilar desde código fuente)
+
+- **Java 21** o superior
+- **Maven 3.6** o superior
+- Los scripts de instalación (`install-windows.bat` o `install-mac.sh`) instalarán todo automáticamente.
 
 ---
 
-## Instalación
+## Instalación Manual
 
 ### Paso 1: Instalar Java
 
@@ -208,12 +260,9 @@ Si el doble clic no funciona, prueba el Método 2.
 
 Cuando ejecutes CiviConnect por primera vez:
 
-1. **Ingresa la URL del Servidor**
-   - Al iniciar por primera vez, la aplicación te pedirá que ingreses la URL del servidor
-   - Ingresa la URL proporcionada por tu administrador (por ejemplo, `https://api.civiconnect.com`)
-   - Asegúrate de incluir `https://` o `http://` al principio
-   - Haz clic en "Conectar" para continuar
-   - La aplicación guardará esta URL para uso futuro
+1. **La aplicación se conecta automáticamente al servidor preconfigurado**
+   - No necesitas ingresar ninguna URL del servidor
+   - La conexión ya está configurada
 
 2. **Registrar una nueva cuenta** (si no tienes una):
    - Haz clic en el botón **"Registro"**

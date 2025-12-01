@@ -41,4 +41,16 @@ public class SessionManager {
     public boolean isLoggedIn() {
         return usuarioLogueado != null;
     }
+
+    /**
+     * Verifica si el usuario logueado es un empleado gubernamental verificado
+     * @return true si es empleado gubernamental verificado, false en caso contrario
+     */
+    public boolean isUsuarioGubernamental() {
+        if (usuarioLogueado == null) {
+            return false;
+        }
+        Boolean esGubernamental = usuarioLogueado.getEmpleadogubverificado();
+        return esGubernamental != null && esGubernamental;
+    }
 }
