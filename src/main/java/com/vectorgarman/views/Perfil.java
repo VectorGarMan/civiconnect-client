@@ -62,6 +62,8 @@ public class Perfil extends JFrame {
     
     private String nombreUsuarioOriginal;
     private Long idColoniaOriginal;
+    
+    private boolean cargandoUbicacionInicial = false;
 
     public Perfil(Usuario usuario) {
         this.usuarioLogueado = usuario;
@@ -342,10 +344,15 @@ public class Perfil extends JFrame {
 
         add(scrollPane, BorderLayout.CENTER);
 
+        // Validar y cargar ubicación inicial
         cargarEstadosYUbicacion();
         
         comboEstado.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED && comboEstado.getSelectedItem() != null) {
+                if (cargandoUbicacionInicial) {
+                    System.out.println("Ignorando evento de estado durante carga inicial");
+                    return;
+                }
                 Estado estadoSeleccionado = (Estado) comboEstado.getSelectedItem();
                 cargarMunicipios((long) estadoSeleccionado.getIdestado());
             }
@@ -353,6 +360,10 @@ public class Perfil extends JFrame {
 
         comboMunicipio.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED && comboMunicipio.getSelectedItem() != null) {
+                if (cargandoUbicacionInicial) {
+                    System.out.println("Ignorando evento de municipio durante carga inicial");
+                    return;
+                }
                 Municipio municipioSeleccionado = (Municipio) comboMunicipio.getSelectedItem();
                 cargarColonias((long) municipioSeleccionado.getIdmunicipio());
             }
@@ -553,18 +564,35 @@ public class Perfil extends JFrame {
      * Carga el catálogo de estados y la ubicación actual del usuario.
      */
     private void cargarEstadosYUbicacion() {
+        cargandoUbicacionInicial = true;
+        
         new Thread(() -> {
             try {
                 ClienteAPI api = new ClienteAPI();
-
                 ApiResponse<?> responseEstados = api.obtenerEstados();
 
                 Ubicacion ubicacion = null;
                 if (usuarioLogueado != null && usuarioLogueado.getIdusuario() != null) {
                     ApiResponse<?> responseUbicacion = api.obtenerUbicacionPorIdUsuario(usuarioLogueado.getIdusuario());
-                    if ("OK".equals(responseUbicacion.getStatus()) && responseUbicacion.getData() instanceof Map<?, ?> ubicacionMap) {
-                        ubicacion = mapearUbicacion(ubicacionMap);
+                    
+                    if ("OK".equals(responseUbicacion.getStatus())) {
+                        if (responseUbicacion.getData() instanceof Map<?, ?> ubicacionMap) {
+                            ubicacion = mapearUbicacion(ubicacionMap);
+                            if (ubicacion != null) {
+                                // Actualizar la sesión con la ubicación obtenida
+                                SessionManager.getInstance().setUbicacionUsuario(ubicacion);
+                            } else {
+                                System.err.println("Error: No se pudo mapear la ubicación");
+                            }
+                        } else {
+                            System.err.println("Error: Los datos de ubicación no son un Map. Tipo: " +
+                                (responseUbicacion.getData() != null ? responseUbicacion.getData().getClass().getSimpleName() : "null"));
+                        }
+                    } else {
+                        System.err.println("Error en respuesta de ubicación: " + responseUbicacion.getMensaje());
                     }
+                } else {
+                    System.err.println("Usuario logueado es null o no tiene ID");
                 }
 
                 final Ubicacion ubicacionFinal = ubicacion;
@@ -598,20 +626,109 @@ public class Perfil extends JFrame {
 
                             if (ubicacionFinal != null) {
                                 seleccionarEstadoPorId(ubicacionFinal.getIdEstado());
-                            } else if (comboEstado.getItemCount() > 0) {
-                                comboEstado.setSelectedIndex(0);
+                                // Cargar municipios y colonias manualmente
+                                cargarMunicipiosYColoniasInicial(ubicacionFinal);
+                            } else {
+                                System.out.println("No hay ubicación del usuario, seleccionando primer estado");
+                                if (comboEstado.getItemCount() > 0) {
+                                    comboEstado.setSelectedIndex(0);
+                                }
+                                cargandoUbicacionInicial = false;
                             }
+                        } else {
+                            System.err.println("Error: Los datos de estados no son una lista");
+                            cargandoUbicacionInicial = false;
                         }
+                    } else {
+                        System.err.println("Error al obtener estados: " + responseEstados.getMensaje());
+                        cargandoUbicacionInicial = false;
                     }
                 });
 
             } catch (Exception ex) {
+                System.err.println("Excepción en cargarEstadosYUbicacion: " + ex.getMessage());
+                ex.printStackTrace();
+                cargandoUbicacionInicial = false;
                 SwingUtilities.invokeLater(() -> {
                     JOptionPane.showMessageDialog(this,
                             "Error al conectar con el servidor:\n" + ex.getMessage(),
                             "Error de Conexión",
                             JOptionPane.ERROR_MESSAGE);
                 });
+            }
+        }).start();
+    }
+    
+    /**
+     * Carga municipios y colonias durante la inicialización sin disparar listeners.
+     */
+    private void cargarMunicipiosYColoniasInicial(Ubicacion ubicacion) {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                
+                // Cargar municipios
+                ApiResponse<?> responseMunicipios = api.obtenerMunicipios(ubicacion.getIdEstado());
+                
+                if ("OK".equals(responseMunicipios.getStatus()) && responseMunicipios.getData() instanceof List<?> municipios) {
+                    SwingUtilities.invokeLater(() -> {
+                        comboMunicipio.removeAllItems();
+                        comboMunicipio.setEnabled(true);
+                        
+                        for (Object item : municipios) {
+                            if (item instanceof Map<?, ?> municipioMap) {
+                                Object idObj = municipioMap.get("idmunicipio");
+                                Object nombreObj = municipioMap.get("nombre");
+                                
+                                if (idObj != null && nombreObj != null) {
+                                    Integer id = ((Number) idObj).intValue();
+                                    String nombre = nombreObj.toString();
+                                    Municipio municipio = new Municipio(id, nombre);
+                                    comboMunicipio.addItem(municipio);
+                                }
+                            }
+                        }
+                        
+                        seleccionarMunicipioPorId(ubicacion.getIdMunicipio());
+                    });
+                    
+                    // Cargar colonias
+                    ApiResponse<?> responseColonias = api.obtenerColonia(ubicacion.getIdMunicipio());
+                    
+                    if ("OK".equals(responseColonias.getStatus()) && responseColonias.getData() instanceof List<?> colonias) {
+                        SwingUtilities.invokeLater(() -> {
+                            comboColonia.removeAllItems();
+                            
+                            for (Object item : colonias) {
+                                if (item instanceof Map<?, ?> coloniaMap) {
+                                    Object idObj = coloniaMap.get("idcolonia");
+                                    Object nombreObj = coloniaMap.get("nombre");
+                                    
+                                    if (idObj != null && nombreObj != null) {
+                                        Integer id = ((Number) idObj).intValue();
+                                        String nombre = nombreObj.toString();
+                                        Colonia colonia = new Colonia(id, nombre);
+                                        comboColonia.addItem(colonia);
+                                    }
+                                }
+                            }
+                            
+                            seleccionarColoniaPorId(ubicacion.getIdColonia());
+                            comboColonia.setEnabled(true);
+                            
+                            // Habilitar listeners después de completar la carga
+                            cargandoUbicacionInicial = false;
+                        });
+                    } else {
+                        System.err.println("Error al cargar colonias iniciales");
+                        cargandoUbicacionInicial = false;
+                    }
+                }
+                
+            } catch (Exception ex) {
+                System.err.println("Error en cargarMunicipiosYColoniasInicial: " + ex.getMessage());
+                ex.printStackTrace();
+                cargandoUbicacionInicial = false;
             }
         }).start();
     }
@@ -689,18 +806,28 @@ public class Perfil extends JFrame {
                         Ubicacion ubicacion = SessionManager.getInstance().getUbicacionUsuario();
                         if (ubicacion != null && ubicacion.getIdEstado().equals(idestado)) {
                             seleccionarMunicipioPorId(ubicacion.getIdMunicipio());
-                        } else if (comboMunicipio.getItemCount() > 0) {
-                            comboMunicipio.setSelectedIndex(0);
+                        } else {
+                            System.out.println("No hay ubicación específica, seleccionando primer municipio");
+                            if (comboMunicipio.getItemCount() > 0) {
+                                comboMunicipio.setSelectedIndex(0);
+                            }
                         }
+                    } else {
+                        System.err.println("Error al cargar municipios: " + response.getMensaje());
+                        comboMunicipio.setEnabled(false);
                     }
                 });
 
             } catch (Exception ex) {
-                SwingUtilities.invokeLater(() ->
-                        JOptionPane.showMessageDialog(this,
-                                "Error al conectar con el servidor:\n" + ex.getMessage(),
-                                "Error de Conexión",
-                                JOptionPane.ERROR_MESSAGE));
+                System.err.println("Excepción en cargarMunicipios: " + ex.getMessage());
+                ex.printStackTrace();
+                SwingUtilities.invokeLater(() -> {
+                    comboMunicipio.setEnabled(false);
+                    JOptionPane.showMessageDialog(this,
+                            "Error al conectar con el servidor:\n" + ex.getMessage(),
+                            "Error de Conexión",
+                            JOptionPane.ERROR_MESSAGE);
+                });
             }
         }).start();
     }
@@ -740,19 +867,28 @@ public class Perfil extends JFrame {
                         if (ubicacion != null && ubicacion.getIdMunicipio().equals(idmunicipio)) {
                             seleccionarColoniaPorId(ubicacion.getIdColonia());
                             comboColonia.setEnabled(true);
-                        } else if (comboColonia.getItemCount() > 0) {
-                            comboColonia.setSelectedIndex(0);
-                            comboColonia.setEnabled(true);
+                        } else {
+                            System.out.println("No hay ubicación específica, seleccionando primera colonia");
+                            if (comboColonia.getItemCount() > 0) {
+                                comboColonia.setSelectedIndex(0);
+                                comboColonia.setEnabled(true);
+                            }
                         }
+                    } else {
+                        System.err.println("Error al cargar colonias: " + response.getMensaje());
+                        System.err.println("Datos recibidos: " + data);
                     }
                 });
 
             } catch (Exception ex) {
-                SwingUtilities.invokeLater(() ->
-                        JOptionPane.showMessageDialog(this,
-                                "Error al conectar con el servidor:\n" + ex.getMessage(),
-                                "Error de Conexión",
-                                JOptionPane.ERROR_MESSAGE));
+                System.err.println("Excepción en cargarColonias: " + ex.getMessage());
+                ex.printStackTrace();
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this,
+                            "Error al conectar con el servidor:\n" + ex.getMessage(),
+                            "Error de Conexión",
+                            JOptionPane.ERROR_MESSAGE);
+                });
             }
         }).start();
     }
@@ -761,25 +897,64 @@ public class Perfil extends JFrame {
      * Convierte los datos de ubicación desde un mapa a un objeto Ubicacion.
      */
     private Ubicacion mapearUbicacion(Map<?, ?> ubicacionMap) {
-        try {
-            Long idEstado = ubicacionMap.get("idEstado") != null ?
-                    ((Number) ubicacionMap.get("idEstado")).longValue() : null;
-            Long idMunicipio = ubicacionMap.get("idMunicipio") != null ?
-                    ((Number) ubicacionMap.get("idMunicipio")).longValue() : null;
-            Long idColonia = ubicacionMap.get("idColonia") != null ?
-                    ((Number) ubicacionMap.get("idColonia")).longValue() : null;
-            String nombreEstado = ubicacionMap.get("nombreEstado") != null ?
-                    ubicacionMap.get("nombreEstado").toString() : "";
-            String nombreMunicipio = ubicacionMap.get("nombreMunicipio") != null ?
-                    ubicacionMap.get("nombreMunicipio").toString() : "";
-            String nombreColonia = ubicacionMap.get("nombreColonia") != null ?
-                    ubicacionMap.get("nombreColonia").toString() : "";
-
-            return new Ubicacion(idColonia, nombreColonia, idMunicipio, nombreMunicipio, idEstado, nombreEstado);
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
+        if (ubicacionMap == null || ubicacionMap.isEmpty()) {
+            System.err.println("Mapa de ubicación es nulo o vacío");
             return null;
         }
+        
+        try {
+            // Intentar con nombres en camelCase primero, luego PascalCase
+            Long idEstado = obtenerValorLong(ubicacionMap, "idEstado", "IdEstado");
+            Long idMunicipio = obtenerValorLong(ubicacionMap, "idMunicipio", "IdMunicipio");
+            Long idColonia = obtenerValorLong(ubicacionMap, "idColonia", "IdColonia");
+            
+            String nombreEstado = obtenerValorString(ubicacionMap, "nombreEstado", "NombreEstado");
+            String nombreMunicipio = obtenerValorString(ubicacionMap, "nombreMunicipio", "NombreMunicipio");
+            String nombreColonia = obtenerValorString(ubicacionMap, "nombreColonia", "NombreColonia");
+
+            // Validar que al menos tengamos los IDs principales
+            if (idEstado == null || idMunicipio == null || idColonia == null) {
+                System.err.println("Faltan datos críticos de ubicación: Estado=" + idEstado +
+                    ", Municipio=" + idMunicipio + ", Colonia=" + idColonia);
+                return null;
+            }
+            
+            return new Ubicacion(idColonia, nombreColonia, idMunicipio, nombreMunicipio, idEstado, nombreEstado);
+        } catch (Exception e) {
+            System.err.println("Error al mapear ubicación: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Obtiene un valor Long del mapa probando múltiples claves posibles.
+     */
+    private Long obtenerValorLong(Map<?, ?> mapa, String... claves) {
+        for (String clave : claves) {
+            Object valor = mapa.get(clave);
+            if (valor != null) {
+                try {
+                    return ((Number) valor).longValue();
+                } catch (Exception e) {
+                    System.err.println("Error al convertir " + clave + " a Long: " + valor);
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Obtiene un valor String del mapa probando múltiples claves posibles.
+     */
+    private String obtenerValorString(Map<?, ?> mapa, String... claves) {
+        for (String clave : claves) {
+            Object valor = mapa.get(clave);
+            if (valor != null) {
+                return valor.toString();
+            }
+        }
+        return "";
     }
 
     /**
