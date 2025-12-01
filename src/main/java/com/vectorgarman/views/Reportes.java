@@ -4958,8 +4958,8 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                     } else {
                         String mensaje = response.getMensaje() != null ? response.getMensaje() : "Error desconocido";
                         JOptionPane.showMessageDialog(this,
-                                "Mensaje del sistema: " + mensaje + "\nStatus: " + status,
-                                "Error",
+                                "Mensaje del sistema: " + mensaje,
+                                "Mensaje",
                                 JOptionPane.ERROR_MESSAGE);
                     }
                 });
