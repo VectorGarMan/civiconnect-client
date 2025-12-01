@@ -6,8 +6,12 @@
   <component name="ChangeListManager">
     <list default="true" id="1f6023ce-b786-41f8-a506-a31e3b556676" name="Changes" comment="pom a java 21">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/api/ClienteAPI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/api/ClienteAPI.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/dto/CrearReporteRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/dto/CrearReporteRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/assets/CiviConnectCut.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/assets/CiviConnectCut.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/CambiarContrasena.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/CambiarContrasena.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Login.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Login.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Perfil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Perfil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Registro.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Registro.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Reportes.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vectorgarman/views/Reportes.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -67,7 +71,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "git-widget-placeholder": "main",
     "last_opened_file_path": "C:/code/intellij/civiconnect-client/src/main/java/com/vectorgarman/dto",
-    "project.structure.last.edited": "Project",
+    "project.structure.last.edited": "Modules",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
     "settings.editor.selected.configurable": "preferences.editor.code.editing"
@@ -76,6 +80,9 @@
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\code\intellij\civiconnect-client\src\main\java\com\vectorgarman\dto" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\code\intellij\civiconnect-client\src\main\resources" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="com.vectorgarman.dto" />

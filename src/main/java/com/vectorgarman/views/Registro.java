@@ -64,7 +64,7 @@ public class Registro extends JDialog {
 
         // Logo CiviConnect
         try {
-            BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/com/vectorgarman/assets/CiviConnectCut.png"));
+            BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/assets/CiviConnectCut.png"));
             // Escalar proporcionalmente: ancho 400px, altura = 400 * (330/1536) ≈ 86px
             Image scaledLogo = logoImg.getScaledInstance(400, 86, Image.SCALE_SMOOTH);
             JLabel lblLogo = new JLabel(new ImageIcon(scaledLogo));

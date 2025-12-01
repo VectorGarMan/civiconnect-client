@@ -39,7 +39,7 @@ public class CambiarContrasena extends JDialog {
 
         // Logo CiviConnect
         try {
-            BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/com/vectorgarman/assets/CiviConnectCut.png"));
+            BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/assets/CiviConnectCut.png"));
             // Escalar proporcionalmente: ancho 300px, altura = 300 * (330/1536) ≈ 64px
             Image scaledLogo = logoImg.getScaledInstance(300, 64, Image.SCALE_SMOOTH);
             JLabel lblLogo = new JLabel(new ImageIcon(scaledLogo));

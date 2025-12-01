@@ -46,7 +46,7 @@ public class Perfil extends JFrame {
 
         inicializarComponentes();
 
-        setSize(700, 710);
+        setSize(800, 810);
         setLocationRelativeTo(null);
         setVisible(true);
 
@@ -67,7 +67,7 @@ public class Perfil extends JFrame {
 
         // Logo CiviConnect
         try {
-            BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/com/vectorgarman/assets/CiviConnectCut.png"));
+            BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/assets/CiviConnectCut.png"));
             // Escalar proporcionalmente: ancho 350px, altura = 350 * (330/1536) ≈ 75px
             Image scaledLogo = logoImg.getScaledInstance(350, 75, Image.SCALE_SMOOTH);
             JLabel lblLogo = new JLabel(new ImageIcon(scaledLogo));
@@ -85,7 +85,7 @@ public class Perfil extends JFrame {
         panelBotonSalir.setAlignmentX(Component.CENTER_ALIGNMENT);
         panelBotonSalir.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         
-        JButton btnSalir = new JButton("← Salir");
+        JButton btnSalir = new JButton("Salir");
         btnSalir.setFont(new Font("Arial", Font.BOLD, 14));
         btnSalir.setForeground(new Color(13, 110, 253));
         btnSalir.setBackground(new Color(240, 248, 255));
@@ -137,29 +137,25 @@ public class Perfil extends JFrame {
         panelInfo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 250));
 
         // Email
-        JLabel lblEmail = new JLabel(usuarioLogueado.getEmail() != null 
-                ? usuarioLogueado.getEmail() : "");
+        JLabel lblEmail = new JLabel(
+                (usuarioLogueado.getEmpleadogubverificado() != null && usuarioLogueado.getEmpleadogubverificado()
+                        ? "Empleado Gubernamental Verificado - "
+                        : "")
+                        + (usuarioLogueado.getEmail() != null
+                        ? usuarioLogueado.getEmail()
+                        : "")
+        );
         lblEmail.setFont(new Font("Arial", Font.PLAIN, 14));
         lblEmail.setAlignmentX(Component.CENTER_ALIGNMENT);
         lblEmail.setForeground(new Color(100, 100, 100));
-
-        // Badge de verificación (si aplica)
-        if (usuarioLogueado.getEmpleadogubverificado() != null && usuarioLogueado.getEmpleadogubverificado()) {
-            JLabel lblVerificado = new JLabel("<html><font face='Segoe UI Emoji'>✓ </font><font face='Arial'>Empleado Gubernamental Verificado</font></html>");
-            lblVerificado.setFont(new Font("Arial", Font.BOLD, 12));
-            lblVerificado.setForeground(new Color(25, 135, 84));
-            lblVerificado.setAlignmentX(Component.CENTER_ALIGNMENT);
-            panelInfo.add(lblVerificado);
-            panelInfo.add(Box.createRigidArea(new Dimension(0, 10)));
-        }
 
         // Sección de nombre de usuario editable
         JLabel lblNombreLabel = new JLabel("Nombre de Usuario");
         lblNombreLabel.setFont(new Font("Arial", Font.BOLD, 13));
         lblNombreLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
+
         txtNombreUsuario = new JTextField(usuarioLogueado.getNombreusuario());
-        txtNombreUsuario.setFont(new Font("Arial", Font.PLAIN, 16));
+        txtNombreUsuario.setFont(new Font("Arial", Font.PLAIN, 13));
         txtNombreUsuario.setMaximumSize(new Dimension(300, 35));
         txtNombreUsuario.setAlignmentX(Component.CENTER_ALIGNMENT);
         txtNombreUsuario.setHorizontalAlignment(JTextField.CENTER);
@@ -171,18 +167,18 @@ public class Perfil extends JFrame {
         panelBotonesNombre.setBackground(Color.WHITE);
         panelBotonesNombre.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        btnEditarNombre = new JButton("✏️ Editar");
+        btnEditarNombre = new JButton("Editar");
         btnEditarNombre.setFont(new Font("Arial", Font.PLAIN, 12));
         btnEditarNombre.setFocusPainted(false);
         btnEditarNombre.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         
-        btnCancelarNombre = new JButton("✖ Cancelar");
+        btnCancelarNombre = new JButton("Cancelar");
         btnCancelarNombre.setFont(new Font("Arial", Font.PLAIN, 12));
         btnCancelarNombre.setFocusPainted(false);
         btnCancelarNombre.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnCancelarNombre.setVisible(false);
         
-        btnGuardarNombre = new JButton("✓ Guardar");
+        btnGuardarNombre = new JButton("Guardar");
         btnGuardarNombre.setFont(new Font("Arial", Font.BOLD, 12));
         btnGuardarNombre.setBackground(new Color(25, 135, 84));
         btnGuardarNombre.setForeground(Color.WHITE);
@@ -261,7 +257,7 @@ public class Perfil extends JFrame {
         panelBotonUbicacion.setBackground(Color.WHITE);
         panelBotonUbicacion.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        btnGuardarUbicacion = new JButton("✓ Guardar");
+        btnGuardarUbicacion = new JButton("Guardar");
         btnGuardarUbicacion.setFont(new Font("Arial", Font.BOLD, 12));
         btnGuardarUbicacion.setBackground(new Color(25, 135, 84));
         btnGuardarUbicacion.setForeground(Color.WHITE);

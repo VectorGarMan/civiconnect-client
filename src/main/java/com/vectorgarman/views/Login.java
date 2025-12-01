@@ -13,6 +13,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Map;
+import java.util.Objects;
 
 public class Login extends JDialog {
     private JPanel contentPane;
@@ -58,7 +59,7 @@ public class Login extends JDialog {
 
         // Logo CiviConnect
         try {
-            BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/com/vectorgarman/assets/CiviConnectCut.png"));
+            BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/assets/CiviConnectCut.png"));
             Image scaledLogo = logoImg.getScaledInstance(400, 86, Image.SCALE_SMOOTH);
             JLabel lblLogo = new JLabel(new ImageIcon(scaledLogo));
             lblLogo.setHorizontalAlignment(SwingConstants.CENTER);

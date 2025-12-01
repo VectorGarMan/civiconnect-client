@@ -47,7 +47,7 @@ public class Reportes extends JFrame {
         cargarEstadosYUbicacion();
         cargarReportes();
 
-        setSize(1200, 700);
+        setSize(1500, 700);
 
         setLocationRelativeTo(null);
         setVisible(true);
@@ -72,9 +72,9 @@ public class Reportes extends JFrame {
         JPanel panelIzquierdo = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         
         // Botón de refrescar (solo icono) - mismo tamaño que btnCrearReporte
-        JButton btnLimpiarFiltros = new JButton("🔄");
-        btnLimpiarFiltros.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
-        btnLimpiarFiltros.setPreferredSize(new Dimension(45, 35));
+        JButton btnLimpiarFiltros = new JButton("↻");
+        btnLimpiarFiltros.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
+        btnLimpiarFiltros.setPreferredSize(new Dimension(40, 40));
         btnLimpiarFiltros.setToolTipText("Restablecer filtros");
         btnLimpiarFiltros.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnLimpiarFiltros.setFocusPainted(false);
@@ -101,21 +101,21 @@ public class Reportes extends JFrame {
         filtrosPanel.add(comboColonia);
         
         // Botón para ver mis reportes
-        JButton btnMisReportes = new JButton("📝 Mis Reportes");
+        JButton btnMisReportes = new JButton("Mis Reportes");
         btnMisReportes.setFont(new Font("Arial", Font.BOLD, 11));
         btnMisReportes.setPreferredSize(new Dimension(120, 35));
         btnMisReportes.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnMisReportes.addActionListener(e -> cargarMisReportes());
 
         // Botón para ver reportes votados
-        JButton btnReportesVotados = new JButton("❤️ Votados");
+        JButton btnReportesVotados = new JButton("Votados");
         btnReportesVotados.setFont(new Font("Arial", Font.BOLD, 11));
         btnReportesVotados.setPreferredSize(new Dimension(110, 35));
         btnReportesVotados.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnReportesVotados.addActionListener(e -> cargarReportesVotados());
 
         // Botón para ver mis comentarios
-        JButton btnMisComentarios = new JButton("💬 Mis Comentarios");
+        JButton btnMisComentarios = new JButton("Mis Comentarios");
         btnMisComentarios.setFont(new Font("Arial", Font.BOLD, 11));
         btnMisComentarios.setPreferredSize(new Dimension(140, 35));
         btnMisComentarios.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -174,7 +174,7 @@ public class Reportes extends JFrame {
         
         // Logo CiviConnect
         try {
-            BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/com/vectorgarman/assets/CiviConnectCut.png"));
+            BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/assets/CiviConnectCut.png"));
             Image scaledLogo = logoImg.getScaledInstance(150, 32, Image.SCALE_SMOOTH);
             JLabel lblLogo = new JLabel(new ImageIcon(scaledLogo));
             lblLogo.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 10));
@@ -1003,7 +1003,7 @@ public class Reportes extends JFrame {
 
         // Botón de editar (solo si el reporte es del usuario logueado)
         if (idusuariocreador != null && idusuariocreador.equals(usuarioLogueado.getIdusuario())) {
-            JButton btnEditar = new JButton("✏️ Editar");
+            JButton btnEditar = new JButton("<html><font face='Segoe UI Emoji'> ✏ </font><font face='Arial'>Editar</font></html> ");
             btnEditar.setFocusable(false);
             btnEditar.setFont(new Font("Arial", Font.PLAIN, 12));
             btnEditar.setForeground(new Color(255, 140, 0)); // Naranja
@@ -1624,10 +1624,6 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
         btnRegresar.setForeground(new Color(13, 110, 253));
         btnRegresar.setBackground(new Color(240, 248, 255));
         btnRegresar.setFocusPainted(false);
-        btnRegresar.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(13, 110, 253), 1),
-                BorderFactory.createEmptyBorder(8, 15, 8, 15)
-        ));
         btnRegresar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         // Efecto hover
@@ -1654,7 +1650,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
         JLabel lblTitulo = new JLabel(titulo);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 16));
         lblTitulo.setForeground(new Color(30, 30, 30));
-        lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
+        lblTitulo.setHorizontalAlignment(SwingConstants.RIGHT);
 
         panelHeader.add(btnRegresar, BorderLayout.WEST);
         panelHeader.add(lblTitulo, BorderLayout.CENTER);
@@ -2810,7 +2806,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
         // Lista de archivos seleccionados
         java.util.List<java.io.File> archivosSeleccionados = new ArrayList<>();
         
-        JButton btnSeleccionarArchivos = new JButton("📎 Seleccionar Imágenes");
+        JButton btnSeleccionarArchivos = new JButton("Seleccionar Imágenes");
         btnSeleccionarArchivos.setFont(new Font("Arial", Font.PLAIN, 12));
         btnSeleccionarArchivos.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnSeleccionarArchivos.setPreferredSize(new Dimension(180, 30));
@@ -3606,7 +3602,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
             }
         }
 
-        JButton btnAgregarArchivos = new JButton("📎 Agregar Imágenes");
+        JButton btnAgregarArchivos = new JButton("Agregar Imágenes");
         btnAgregarArchivos.setFont(new Font("Arial", Font.PLAIN, 12));
         btnAgregarArchivos.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnAgregarArchivos.setPreferredSize(new Dimension(180, 30));
