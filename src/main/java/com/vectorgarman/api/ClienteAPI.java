@@ -16,14 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ClienteAPI {
-<<<<<<< HEAD
+
         private static final String BASE_URL = "http://localhost:8080/api";
 //    private static final String BASE_URL = "https://civiconnect-api.onrender.com/api";
-=======
-
-    private static final String BASE_URL = "http://localhost:8080/api";
-    // private static final String BASE_URL = "https://civiconnect-api.onrender.com/api";
->>>>>>> 0b465f7 (se corrigió el problema cuando se edita un reporte, no cargaba su ubicacion, cargaba la ubicacion del usuario logeado)
 
     private final Gson gson = new GsonBuilder()
             .registerTypeAdapter(LocalDate.class,
