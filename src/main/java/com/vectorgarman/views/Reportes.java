@@ -30,6 +30,10 @@ public class Reportes extends JFrame {
     private List<ItemReporte> itemsVisibles = new ArrayList<>();
 
     private Set<Long> reportesVotadosPorUsuario = new HashSet<>();
+    
+    // Referencias a los listeners para poder removerlos temporalmente
+    private ItemListener estadoListener;
+    private ItemListener municipioListener;
 
     public Reportes(Usuario usuario) {
         this.usuarioLogueado = usuario;
@@ -137,7 +141,8 @@ public class Reportes extends JFrame {
         panelIzquierdo.add(btnReportesVotados);
         panelIzquierdo.add(btnMisComentarios);
 
-        comboEstado.addItemListener(new ItemListener() {
+        // Guardar referencias a los listeners para poder removerlos temporalmente
+        estadoListener = new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
@@ -149,9 +154,10 @@ public class Reportes extends JFrame {
                     aplicarFiltrosYMostrar();
                 }
             }
-        });
+        };
+        comboEstado.addItemListener(estadoListener);
 
-        comboMunicipio.addItemListener(new ItemListener() {
+        municipioListener = new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
@@ -163,7 +169,8 @@ public class Reportes extends JFrame {
                     aplicarFiltrosYMostrar();
                 }
             }
-        });
+        };
+        comboMunicipio.addItemListener(municipioListener);
 
         comboColonia.addItemListener(new ItemListener() {
             @Override
@@ -199,7 +206,7 @@ public class Reportes extends JFrame {
         btnPerfil.setPreferredSize(new Dimension(45, 35));
         btnPerfil.addActionListener(e -> abrirVentanaPerfil());
 
-        // ⭐ VALIDACIÓN: Ocultar botón de crear reporte si es usuario gubernamental
+        //  VALIDACIÓN: Ocultar botón de crear reporte si es usuario gubernamental
         if (!esUsuarioGubernamental()) {
             botonesPanel.add(btnCrearReporte);
         }
@@ -289,9 +296,9 @@ public class Reportes extends JFrame {
                                 }
                             }
 
-                            // Seleccionar el estado del usuario si está disponible
+                            //  SOLUCIÓN: Cargar la jerarquía completa de ubicación de forma secuencial
                             if (ubicacionFinal != null) {
-                                seleccionarEstadoPorId(ubicacionFinal.getIdEstado());
+                                cargarUbicacionCompleta(ubicacionFinal);
                             } else if (comboEstado.getItemCount() > 0) {
                                 comboEstado.setSelectedIndex(0);
                             }
@@ -307,6 +314,111 @@ public class Reportes extends JFrame {
                             JOptionPane.ERROR_MESSAGE);
                     // Si hay error, cargar estados normalmente
                     cargarEstados();
+                });
+            }
+        }).start();
+    }
+
+    /**
+     * Carga la ubicación completa del usuario de forma secuencial
+     * para evitar condiciones de carrera entre los comboboxes
+     */
+    private void cargarUbicacionCompleta(Ubicacion ubicacion) {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                
+                // Remover listeners temporalmente para evitar llamadas duplicadas
+                SwingUtilities.invokeLater(() -> {
+                    comboEstado.removeItemListener(estadoListener);
+                    comboMunicipio.removeItemListener(municipioListener);
+                    comboEstado.setEnabled(false);
+                    comboMunicipio.setEnabled(false);
+                    comboColonia.setEnabled(false);
+                });
+                
+                Thread.sleep(100); // Pausa para asegurar que se remuevan los listeners
+                ApiResponse<?> responseMunicipios = api.obtenerMunicipios(ubicacion.getIdEstado());
+                
+                if ("OK".equals(responseMunicipios.getStatus()) && responseMunicipios.getData() instanceof List<?> municipios) {
+                    SwingUtilities.invokeLater(() -> {
+                        comboMunicipio.removeAllItems();
+                        for (Object item : municipios) {
+                            if (item instanceof Map<?, ?> municipioMap) {
+                                Object idObj = municipioMap.get("idmunicipio");
+                                Object nombreObj = municipioMap.get("nombre");
+
+                                if (idObj != null && nombreObj != null) {
+                                    Integer id = ((Number) idObj).intValue();
+                                    String nombre = nombreObj.toString();
+                                    Municipio municipio = new Municipio(id, nombre);
+                                    comboMunicipio.addItem(municipio);
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Esperar a que se actualice la UI
+                    Thread.sleep(150);
+                    
+                    // 2. Cargar colonias del municipio
+                    ApiResponse<?> responseColonias = api.obtenerColonia(ubicacion.getIdMunicipio());
+                    
+                    if ("OK".equals(responseColonias.getStatus()) && responseColonias.getData() instanceof List<?> colonias) {
+                        SwingUtilities.invokeLater(() -> {
+                            comboColonia.removeAllItems();
+                            for (Object item : colonias) {
+                                if (item instanceof Map<?, ?> coloniaMap) {
+                                    Object idObj = coloniaMap.get("idcolonia");
+                                    Object nombreObj = coloniaMap.get("nombre");
+
+                                    if (idObj != null && nombreObj != null) {
+                                        Integer id = ((Number) idObj).intValue();
+                                        String nombre = nombreObj.toString();
+                                        Colonia colonia = new Colonia(id, nombre);
+                                        comboColonia.addItem(colonia);
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // Esperar a que se actualice la UI
+                        Thread.sleep(150);
+                        
+                        // 3. Seleccionar los valores correctos en el orden correcto
+                        SwingUtilities.invokeLater(() -> {
+                            seleccionarEstadoPorId(ubicacion.getIdEstado());
+                            seleccionarMunicipioPorId(ubicacion.getIdMunicipio());
+                            seleccionarColoniaPorId(ubicacion.getIdColonia());
+                            
+                            // Re-agregar listeners y re-habilitar los combos
+                            comboEstado.addItemListener(estadoListener);
+                            comboMunicipio.addItemListener(municipioListener);
+                            
+                            comboEstado.setEnabled(true);
+                            comboMunicipio.setEnabled(true);
+                            if (comboColonia.getItemCount() > 0) {
+                                comboColonia.setEnabled(true);
+                            }
+                            
+
+                            aplicarFiltrosYMostrar();
+                        });
+                    }
+                }
+                
+            } catch (Exception ex) {
+                System.err.println("❌ Error al cargar ubicación completa: " + ex.getMessage());
+                ex.printStackTrace();
+                SwingUtilities.invokeLater(() -> {
+                    // Fallback: re-agregar listeners, seleccionar estado y re-habilitar
+                    comboEstado.addItemListener(estadoListener);
+                    comboMunicipio.addItemListener(municipioListener);
+                    
+                    seleccionarEstadoPorId(ubicacion.getIdEstado());
+                    comboEstado.setEnabled(true);
+                    comboMunicipio.setEnabled(true);
+                    comboColonia.setEnabled(true);
                 });
             }
         }).start();
@@ -468,7 +580,12 @@ public class Reportes extends JFrame {
                     comboColonia.removeAllItems();
                     comboColonia.setEnabled(false);
 
-                    if ("OK".equals(status) && data instanceof List<?> colonias) {
+                    if ("OK".equals(status) && data instanceof List<?> colonias) {                        
+                        if (colonias.isEmpty()) {
+                            return;
+                        }
+                        
+                        int coloniasAgregadas = 0;
                         for (Object item : colonias) {
                             if (item instanceof Map<?, ?> coloniaMap) {
                                 Object idObj = coloniaMap.get("idcolonia");
@@ -479,23 +596,33 @@ public class Reportes extends JFrame {
                                     String nombre = nombreObj.toString();
                                     Colonia colonia = new Colonia(id, nombre);
                                     comboColonia.addItem(colonia);
+                                    coloniasAgregadas++;
                                 }
                             }
                         }
 
-                        // Seleccionar colonia del usuario si está disponible
-                        Ubicacion ubicacion = SessionManager.getInstance().getUbicacionUsuario();
-                        if (ubicacion != null && ubicacion.getIdMunicipio().equals(idmunicipio)) {
-                            seleccionarColoniaPorId(ubicacion.getIdColonia());
+                        // Solo habilitar si hay items
+                        if (comboColonia.getItemCount() > 0) {
+                            // Seleccionar colonia del usuario si está disponible
+                            Ubicacion ubicacion = SessionManager.getInstance().getUbicacionUsuario();
+                            if (ubicacion != null && ubicacion.getIdMunicipio().equals(idmunicipio)) {
+                                seleccionarColoniaPorId(ubicacion.getIdColonia());
+                            } else if (comboColonia.getItemCount() > 0) {
+                                comboColonia.setSelectedIndex(0);
+                            }
                             comboColonia.setEnabled(true);
-                        } else if (comboColonia.getItemCount() > 0) {
-                            comboColonia.setSelectedIndex(0);
-                            comboColonia.setEnabled(true);
+                        } else {
+                            System.out.println("⚠️ No se agregaron colonias al combo");
                         }
+                    } else {
+                        System.out.println("❌ Error en respuesta. Status: " + status + ", Data type: " +
+                            (data != null ? data.getClass().getSimpleName() : "null"));
                     }
                 });
 
             } catch (Exception ex) {
+                System.err.println("❌ Excepción al cargar colonias: " + ex.getMessage());
+                ex.printStackTrace();
                 SwingUtilities.invokeLater(() ->
                         JOptionPane.showMessageDialog(this,
                                 "Error al conectar con el servidor:\n" + ex.getMessage(),
@@ -566,7 +693,7 @@ public class Reportes extends JFrame {
                         Object dataObj = response.getData();
 
                         if (dataObj instanceof List<?> reportes) {
-                            // ⭐ CAMBIO IMPORTANTE: Convertir a mapas mutables
+                            //  CAMBIO IMPORTANTE: Convertir a mapas mutables
                             todosLosReportes.clear();
                             for (Object item : reportes) {
                                 if (item instanceof Map<?, ?> reporteMap) {
@@ -794,7 +921,7 @@ public class Reportes extends JFrame {
         }
         tarjeta.add(barraColor, BorderLayout.NORTH);
 
-        // ⭐ PANEL PRINCIPAL CON DOS COLUMNAS
+        // PANEL PRINCIPAL CON DOS COLUMNAS
         JPanel contenidoPrincipal = new JPanel(new BorderLayout(10, 0));
         contenidoPrincipal.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
         contenidoPrincipal.setBackground(Color.WHITE);
@@ -853,7 +980,7 @@ public class Reportes extends JFrame {
 
         JScrollPane scrollSolucion = new JScrollPane(txtSolucionpropuesta);
         scrollSolucion.setBorder(BorderFactory.createDashedBorder(Color.GRAY));
-        scrollSolucion.setPreferredSize(new Dimension(520, 45)); // ⭐ Más compacto y menos ancho
+        scrollSolucion.setPreferredSize(new Dimension(520, 45)); //  Más compacto y menos ancho
         scrollSolucion.setAlignmentX(Component.LEFT_ALIGNMENT);
         scrollSolucion.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollSolucion.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -882,7 +1009,7 @@ public class Reportes extends JFrame {
                             java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(in);
 
                             if (image != null) {
-                                // ⭐ Imágenes más pequeñas (120x80 en lugar de 150x100)
+                                //  Imágenes más pequeñas (120x80 en lugar de 150x100)
                                 java.awt.Image scaledImage = image.getScaledInstance(120, 80, java.awt.Image.SCALE_SMOOTH);
                                 ImageIcon icon = new ImageIcon(scaledImage);
 
@@ -1265,7 +1392,7 @@ public class Reportes extends JFrame {
                 ApiResponse<?> response = api.crearComentario(
                         usuarioLogueado.getIdusuario(),
                         idReporte,
-                        null, // ⭐ null = comentario principal, no respuesta
+                        null, //  null = comentario principal, no respuesta
                         contenido
                 );
 
@@ -1278,7 +1405,7 @@ public class Reportes extends JFrame {
 
                         ventanaActual.dispose();
 
-                        // ⭐ Actualizar el contador SOLO UNA VEZ
+                        //  Actualizar el contador SOLO UNA VEZ
                         actualizarContadorComentarios(idReporte);
                     } else {
                         btnEnviar.setEnabled(true);
@@ -1309,7 +1436,7 @@ public class Reportes extends JFrame {
     private void actualizarContadorComentarios(Long idReporte) {
         boolean actualizado = false;
 
-        // ⭐ SOLO actualizar en todosLosReportes (la fuente de verdad)
+        //  SOLO actualizar en todosLosReportes (la fuente de verdad)
         for (Map<?, ?> reporteMap : todosLosReportes) {
             if (reporteMap instanceof Map) {
                 Map<String, Object> reporteMutable = (Map<String, Object>) reporteMap;
@@ -1333,19 +1460,19 @@ public class Reportes extends JFrame {
                         // Actualizar el mapa
                         reporteViewMutable.put("totalcomentarios", nuevoTotal);
 
-                        // ⭐ Actualizar la UI solo UNA vez
+                        //  Actualizar la UI solo UNA vez
                         if (!actualizado) {
                             actualizarBotónComentariosEnUI(idReporte, nuevoTotal);
                             actualizado = true;
                         }
 
-                        break; // ⭐ Salir del bucle
+                        break; //  Salir del bucle
                     }
                 }
             }
         }
 
-        // ⭐ Actualizar reportesFiltrados solo si es necesario mostrarlos
+        //  Actualizar reportesFiltrados solo si es necesario mostrarlos
         // (esto se hará automáticamente cuando se vuelva a aplicar filtros)
         if (actualizado) {
             // Forzar re-aplicación de filtros para sincronizar reportesFiltrados
@@ -1386,7 +1513,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                     panelListaReportes.revalidate();
                     panelListaReportes.repaint();
 
-                    return; // ⭐ Salir después de encontrar y actualizar
+                    return; //  Salir después de encontrar y actualizar
                 }
             }
         }
@@ -1434,7 +1561,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                                 JOptionPane.INFORMATION_MESSAGE
                         );
 
-                        // ⭐ NUEVO: Decrementar el contador de comentarios
+                        //  NUEVO: Decrementar el contador de comentarios
                         decrementarContadorComentarios(context.idReporte);
 
                         // Cerrar ventana actual y recargar el nivel actual
@@ -1795,7 +1922,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
         // Panel de acciones (pasamos idUsuario para verificar si es del usuario actual)
         JPanel panelAcciones = crearPanelAcciones(
                 idComentario,
-                idUsuario, // ⭐ Nuevo parámetro
+                idUsuario, //  Nuevo parámetro
                 numRespuestas,
                 context,
                 ventanaActual
@@ -3176,26 +3303,37 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
 
         ventanaCrear.add(scrollPane);
 
+        //  SOLUCIÓN: Guardar referencias a los listeners para poder removerlos
+        ItemListener estadoReporteListener = new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED && comboEstadoReporte.getSelectedItem() != null) {
+                    Map<?, ?> estadoSel = (Map<?, ?>) comboEstadoReporte.getSelectedItem();
+                    Long idEstado = ((Number) estadoSel.get("idestado")).longValue();
+                    cargarMunicipiosParaReporte(idEstado, comboMunicipioReporte, comboColoniaReporte);
+                }
+            }
+        };
+
+        ItemListener municipioReporteListener = new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED && comboMunicipioReporte.getSelectedItem() != null) {
+                    Map<?, ?> municipioSel = (Map<?, ?>) comboMunicipioReporte.getSelectedItem();
+                    Long idMunicipio = ((Number) municipioSel.get("idmunicipio")).longValue();
+                    cargarColoniasParaReporte(idMunicipio, comboColoniaReporte);
+                }
+            }
+        };
+
         // Cargar datos en los comboboxes (incluyendo obtener el ID y color de "En Proceso")
         cargarDatosCrearReporte(comboEstadoReporte, comboMunicipioReporte, comboColoniaReporte,
-                comboCategoriaReporte, comboNivelPrioridad, idEstadoEnProceso, colorEnProceso, barraColor, lblEstadoFijo);
+                comboCategoriaReporte, comboNivelPrioridad, idEstadoEnProceso, colorEnProceso, barraColor, lblEstadoFijo,
+                estadoReporteListener, municipioReporteListener);
 
-        // Listeners para cascada de ubicación
-        comboEstadoReporte.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED && comboEstadoReporte.getSelectedItem() != null) {
-                Map<?, ?> estadoSel = (Map<?, ?>) comboEstadoReporte.getSelectedItem();
-                Long idEstado = ((Number) estadoSel.get("idestado")).longValue();
-                cargarMunicipiosParaReporte(idEstado, comboMunicipioReporte, comboColoniaReporte);
-            }
-        });
-
-        comboMunicipioReporte.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED && comboMunicipioReporte.getSelectedItem() != null) {
-                Map<?, ?> municipioSel = (Map<?, ?>) comboMunicipioReporte.getSelectedItem();
-                Long idMunicipio = ((Number) municipioSel.get("idmunicipio")).longValue();
-                cargarColoniasParaReporte(idMunicipio, comboColoniaReporte);
-            }
-        });
+        // Agregar listeners DESPUÉS de la carga inicial
+        comboEstadoReporte.addItemListener(estadoReporteListener);
+        comboMunicipioReporte.addItemListener(municipioReporteListener);
 
         ventanaCrear.setVisible(true);
     }
@@ -3223,24 +3361,12 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
     // ============================================
     private void cargarDatosCrearReporte(JComboBox<Map<?, ?>> comboEstado, JComboBox<Map<?, ?>> comboMunicipio,
                                          JComboBox<Map<?, ?>> comboColonia, JComboBox<Map<?, ?>> comboCategoria,
-                                         JComboBox<Map<?, ?>> comboNivelPrioridad, Long[] idEstadoEnProceso, 
-                                         String[] colorEnProceso, JPanel barraColor, JLabel lblEstadoFijo) {
+                                         JComboBox<Map<?, ?>> comboNivelPrioridad, Long[] idEstadoEnProceso,
+                                         String[] colorEnProceso, JPanel barraColor, JLabel lblEstadoFijo,
+                                         ItemListener estadoListener, ItemListener municipioListener) {
         new Thread(() -> {
             try {
                 ClienteAPI api = new ClienteAPI();
-
-                // Cargar estados
-                ApiResponse<?> responseEstados = api.obtenerEstados();
-                if ("OK".equals(responseEstados.getStatus()) && responseEstados.getData() instanceof List<?> estados) {
-                    SwingUtilities.invokeLater(() -> {
-                        comboEstado.removeAllItems();
-                        for (Object item : estados) {
-                            if (item instanceof Map<?, ?>) {
-                                comboEstado.addItem((Map<?, ?>) item);
-                            }
-                        }
-                    });
-                }
 
                 // Cargar categorías
                 ApiResponse<?> responseCategorias = api.obtenerCategoriasDeReporte();
@@ -3262,9 +3388,9 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                         if (item instanceof Map<?, ?> estadoMap) {
                             String nombre = estadoMap.get("nombre") != null ? estadoMap.get("nombre").toString() : "";
                             if ("En Proceso".equalsIgnoreCase(nombre)) {
-                                idEstadoEnProceso[0] = estadoMap.get("idestadoreporte") != null 
+                                idEstadoEnProceso[0] = estadoMap.get("idestadoreporte") != null
                                     ? ((Number) estadoMap.get("idestadoreporte")).longValue() : null;
-                                colorEnProceso[0] = estadoMap.get("color") != null 
+                                colorEnProceso[0] = estadoMap.get("color") != null
                                     ? estadoMap.get("color").toString() : "#FFA500";
                                 
                                 // Actualizar la UI con el color de "En Proceso"
@@ -3297,6 +3423,26 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                     });
                 }
 
+                //  CARGAR UBICACIÓN DEL USUARIO DE FORMA SECUENCIAL
+                Ubicacion ubicacion = SessionManager.getInstance().getUbicacionUsuario();
+                if (ubicacion != null) {
+                    cargarUbicacionParaReporte(comboEstado, comboMunicipio, comboColonia, ubicacion,
+                                              estadoListener, municipioListener);
+                } else {
+                    // Si no hay ubicación, cargar estados normalmente
+                    ApiResponse<?> responseEstados = api.obtenerEstados();
+                    if ("OK".equals(responseEstados.getStatus()) && responseEstados.getData() instanceof List<?> estados) {
+                        SwingUtilities.invokeLater(() -> {
+                            comboEstado.removeAllItems();
+                            for (Object item : estados) {
+                                if (item instanceof Map<?, ?>) {
+                                    comboEstado.addItem((Map<?, ?>) item);
+                                }
+                            }
+                        });
+                    }
+                }
+
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() ->
                         JOptionPane.showMessageDialog(this,
@@ -3305,6 +3451,73 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                                 JOptionPane.ERROR_MESSAGE));
             }
         }).start();
+    }
+
+    // ============================================
+    // CARGAR UBICACIÓN PARA REPORTE (SECUENCIAL)
+    // ============================================
+    private void cargarUbicacionParaReporte(JComboBox<Map<?, ?>> comboEstado, JComboBox<Map<?, ?>> comboMunicipio,
+                                           JComboBox<Map<?, ?>> comboColonia, Ubicacion ubicacion,
+                                           ItemListener estadoListener, ItemListener municipioListener) {
+        try {
+            ClienteAPI api = new ClienteAPI();
+            
+            // 1. Cargar estados
+            ApiResponse<?> responseEstados = api.obtenerEstados();
+            if ("OK".equals(responseEstados.getStatus()) && responseEstados.getData() instanceof List<?> estados) {
+                SwingUtilities.invokeLater(() -> {
+                    comboEstado.removeAllItems();
+                    for (Object item : estados) {
+                        if (item instanceof Map<?, ?>) {
+                            comboEstado.addItem((Map<?, ?>) item);
+                        }
+                    }
+                });
+                Thread.sleep(100);
+                
+                // 2. Cargar municipios del estado del usuario
+                ApiResponse<?> responseMunicipios = api.obtenerMunicipios(ubicacion.getIdEstado());
+                if ("OK".equals(responseMunicipios.getStatus()) && responseMunicipios.getData() instanceof List<?> municipios) {
+                    SwingUtilities.invokeLater(() -> {
+                        comboMunicipio.removeAllItems();
+                        for (Object item : municipios) {
+                            if (item instanceof Map<?, ?>) {
+                                comboMunicipio.addItem((Map<?, ?>) item);
+                            }
+                        }
+                        comboMunicipio.setEnabled(true);
+                    });
+                    Thread.sleep(100);
+                    
+                    // 3. Cargar colonias del municipio del usuario
+                    ApiResponse<?> responseColonias = api.obtenerColonia(ubicacion.getIdMunicipio());
+                    if ("OK".equals(responseColonias.getStatus()) && responseColonias.getData() instanceof List<?> colonias) {
+                        SwingUtilities.invokeLater(() -> {
+                            comboColonia.removeAllItems();
+                            for (Object item : colonias) {
+                                if (item instanceof Map<?, ?>) {
+                                    comboColonia.addItem((Map<?, ?>) item);
+                                }
+                            }
+                            if (comboColonia.getItemCount() > 0) {
+                                comboColonia.setEnabled(true);
+                            }
+                        });
+                        Thread.sleep(100);
+                        
+                        // 4. Seleccionar valores del usuario
+                        SwingUtilities.invokeLater(() -> {
+                            seleccionarItemPorNombre(comboEstado, ubicacion.getNombreEstado());
+                            seleccionarItemPorNombre(comboMunicipio, ubicacion.getNombreMunicipio());
+                            seleccionarItemPorNombre(comboColonia, ubicacion.getNombreColonia());
+                        });
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            System.err.println("❌ Error al cargar ubicación para reporte: " + ex.getMessage());
+            ex.printStackTrace();
+        }
     }
 
     // ============================================
@@ -3453,7 +3666,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
         JLabel lblEstadoLabel = new JLabel("Estado: ");
         lblEstadoLabel.setFont(new Font("Arial", Font.PLAIN, 13));
         
-        // ⭐ DIFERENCIA CLAVE: ComboBox editable para el estado
+        //  DIFERENCIA CLAVE: ComboBox editable para el estado
         JComboBox<Map<?, ?>> comboEstadoReporte = new JComboBox<>();
         comboEstadoReporte.setFont(new Font("Arial", Font.BOLD, 13));
         comboEstadoReporte.setPreferredSize(new Dimension(120, 25));
@@ -3958,20 +4171,14 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
 
                     SwingUtilities.invokeLater(() -> {
                         if (response != null && response.isSuccess()) {
-                            // ⭐ ACTUALIZAR EL REPORTE LOCALMENTE CON LA RESPUESTA DEL SERVIDOR
-                            Object dataObj = response.getData();
-                            if (dataObj instanceof Map<?, ?> reporteActualizado) {
-                                actualizarReporteEnLista(idReporte, reporteActualizado);
-                            }
-                            
                             JOptionPane.showMessageDialog(ventanaEditar,
                                     "Reporte actualizado exitosamente",
                                     "Éxito",
                                     JOptionPane.INFORMATION_MESSAGE);
                             ventanaEditar.dispose();
                             
-                            // Refrescar la vista con los datos actualizados
-                            aplicarFiltrosYMostrar();
+                            // Recargar todos los reportes desde el servidor
+                            cargarReportes();
                         } else {
                             btnGuardar.setEnabled(true);
                             btnGuardar.setText("Guardar Cambios");
@@ -4007,28 +4214,39 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
 
         ventanaEditar.add(scrollPane);
 
+        //  SOLUCIÓN: Guardar referencias a los listeners para poder removerlos
+        ItemListener estadoUbicListener = new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED && comboEstadoUbic.getSelectedItem() != null) {
+                    Map<?, ?> estadoSel = (Map<?, ?>) comboEstadoUbic.getSelectedItem();
+                    Long idEstado = ((Number) estadoSel.get("idestado")).longValue();
+                    cargarMunicipiosParaReporte(idEstado, comboMunicipioUbic, comboColoniaUbic);
+                }
+            }
+        };
+
+        ItemListener municipioUbicListener = new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED && comboMunicipioUbic.getSelectedItem() != null) {
+                    Map<?, ?> municipioSel = (Map<?, ?>) comboMunicipioUbic.getSelectedItem();
+                    Long idMunicipio = ((Number) municipioSel.get("idmunicipio")).longValue();
+                    cargarColoniasParaReporte(idMunicipio, comboColoniaUbic);
+                }
+            }
+        };
+
         // Cargar datos en los comboboxes y pre-seleccionar valores actuales
         cargarDatosEditarReporte(comboEstadoUbic, comboMunicipioUbic, comboColoniaUbic,
                 comboCategoriaReporte, comboNivelPrioridad, comboEstadoReporte,
-                estadoActual, municipioActual, coloniaActual, categoriaActual, 
-                prioridadActual, estadoReporteActual);
+                estadoActual, municipioActual, coloniaActual, categoriaActual,
+                prioridadActual, estadoReporteActual,
+                estadoUbicListener, municipioUbicListener);
 
-        // Listeners para cascada de ubicación
-        comboEstadoUbic.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED && comboEstadoUbic.getSelectedItem() != null) {
-                Map<?, ?> estadoSel = (Map<?, ?>) comboEstadoUbic.getSelectedItem();
-                Long idEstado = ((Number) estadoSel.get("idestado")).longValue();
-                cargarMunicipiosParaReporte(idEstado, comboMunicipioUbic, comboColoniaUbic);
-            }
-        });
-
-        comboMunicipioUbic.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED && comboMunicipioUbic.getSelectedItem() != null) {
-                Map<?, ?> municipioSel = (Map<?, ?>) comboMunicipioUbic.getSelectedItem();
-                Long idMunicipio = ((Number) municipioSel.get("idmunicipio")).longValue();
-                cargarColoniasParaReporte(idMunicipio, comboColoniaUbic);
-            }
-        });
+        // Agregar listeners DESPUÉS de la carga inicial
+        comboEstadoUbic.addItemListener(estadoUbicListener);
+        comboMunicipioUbic.addItemListener(municipioUbicListener);
 
         ventanaEditar.setVisible(true);
     }
@@ -4275,7 +4493,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                 try {
                     ClienteAPI api = new ClienteAPI();
                     
-                    // ⭐ SOLUCIÓN: Obtener el reporte completo del servidor con todos los IDs usando obtenerEntidadPorId
+                    //  SOLUCIÓN: Obtener el reporte completo del servidor con todos los IDs usando obtenerEntidadPorId
                     ApiResponse<?> responseReporte = api.obtenerEntidadPorId(idReporte);
                     
                     if (responseReporte == null || !responseReporte.isSuccess()) {
@@ -4314,7 +4532,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                         idusuariocreador,
                         idcolonia,
                         idnivelprioridad,
-                        idEstadoReporteNuevo, // ⭐ SOLO ESTE CAMPO CAMBIA
+                        idEstadoReporteNuevo, //  SOLO ESTE CAMPO CAMBIA
                         idcategoria,
                         titulo,
                         descripcion,
@@ -4327,20 +4545,14 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
             
                     SwingUtilities.invokeLater(() -> {
                         if (response != null && response.isSuccess()) {
-                            // Actualizar el reporte localmente
-                            Object dataObj = response.getData();
-                            if (dataObj instanceof Map<?, ?> reporteActualizado) {
-                                actualizarReporteEnLista(idReporte, reporteActualizado);
-                            }
-                            
                             JOptionPane.showMessageDialog(ventanaEditar,
                                     "Estado del reporte actualizado exitosamente",
                                     "Éxito",
                                     JOptionPane.INFORMATION_MESSAGE);
                             ventanaEditar.dispose();
                             
-                            // Refrescar la vista
-                            aplicarFiltrosYMostrar();
+                            // Recargar todos los reportes desde el servidor
+                            cargarReportes();
                         } else {
                             btnGuardar.setEnabled(true);
                             btnGuardar.setText("Guardar Estado");
@@ -4420,7 +4632,8 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                                          JComboBox<Map<?, ?>> comboColonia, JComboBox<Map<?, ?>> comboCategoria,
                                          JComboBox<Map<?, ?>> comboNivelPrioridad, JComboBox<Map<?, ?>> comboEstadoReporte,
                                          String estadoActual, String municipioActual, String coloniaActual,
-                                         String categoriaActual, String prioridadActual, String estadoReporteActual) {
+                                         String categoriaActual, String prioridadActual, String estadoReporteActual,
+                                         ItemListener estadoListener, ItemListener municipioListener) {
         new Thread(() -> {
             try {
                 ClienteAPI api = new ClienteAPI();
@@ -4442,8 +4655,6 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                         }
                     }
                     
-                    final Long idEstadoFinal = idEstadoSeleccionado;
-                    
                     SwingUtilities.invokeLater(() -> {
                         comboEstado.removeAllItems();
                         for (Object item : estados) {
@@ -4451,11 +4662,11 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                                 comboEstado.addItem((Map<?, ?>) item);
                             }
                         }
-                        // Pre-seleccionar estado actual
-                        seleccionarItemPorNombre(comboEstado, estadoActual);
                     });
                     
-                    // ⭐ CARGAR MUNICIPIOS del estado seleccionado
+                    Thread.sleep(100);
+                    
+                    //  CARGAR MUNICIPIOS del estado seleccionado
                     if (idEstadoSeleccionado != null) {
                         ApiResponse<?> responseMunicipios = api.obtenerMunicipios(idEstadoSeleccionado);
                         Long idMunicipioSeleccionado = null;
@@ -4473,8 +4684,6 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                                 }
                             }
                             
-                            final Long idMunicipioFinal = idMunicipioSeleccionado;
-                            
                             SwingUtilities.invokeLater(() -> {
                                 comboMunicipio.removeAllItems();
                                 for (Object item : municipios) {
@@ -4483,11 +4692,11 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                                     }
                                 }
                                 comboMunicipio.setEnabled(true);
-                                // Pre-seleccionar municipio actual
-                                seleccionarItemPorNombre(comboMunicipio, municipioActual);
                             });
                             
-                            // ⭐ CARGAR COLONIAS del municipio seleccionado
+                            Thread.sleep(100);
+                            
+                            //  CARGAR COLONIAS del municipio seleccionado
                             if (idMunicipioSeleccionado != null) {
                                 ApiResponse<?> responseColonias = api.obtenerColonia(idMunicipioSeleccionado);
                                 
@@ -4502,7 +4711,14 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                                         if (comboColonia.getItemCount() > 0) {
                                             comboColonia.setEnabled(true);
                                         }
-                                        // Pre-seleccionar colonia actual
+                                    });
+                                    
+                                    Thread.sleep(100);
+                                    
+                                    //  SELECCIONAR VALORES DESPUÉS DE CARGAR TODO
+                                    SwingUtilities.invokeLater(() -> {
+                                        seleccionarItemPorNombre(comboEstado, estadoActual);
+                                        seleccionarItemPorNombre(comboMunicipio, municipioActual);
                                         seleccionarItemPorNombre(comboColonia, coloniaActual);
                                     });
                                 }

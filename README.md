@@ -18,7 +18,7 @@ CiviConnect Cliente es una aplicación de escritorio que permite a los ciudadano
 
 ## 📦 Requisitos Previos
 
-- **Java Development Kit (JDK) 25** o superior
+- **Java Development Kit (JDK) 21** o superior
 - **Maven 3.6+** (para compilar desde el código fuente)
 - Conexión a internet (para conectarse al servidor)
 
@@ -30,8 +30,8 @@ java -version
 
 Deberías ver algo como:
 ```
-java version "25" 2025-XX-XX
-Java(TM) SE Runtime Environment (build 25+XX)
+java version "21" 2024-XX-XX
+Java(TM) SE Runtime Environment (build 21+XX)
 ```
 
 ### Verificar Maven
@@ -103,27 +103,58 @@ java -Xmx512m -jar target/civiconnect-client.jar
 ```
 civiconnect-client/
 ├── src/
-│   └── main/
-│       └── java/
-│           └── com/
-│               └── vectorgarman/
-│                   ├── Main.java              # Punto de entrada
-│                   ├── api/
-│                   │   └── ClienteAPI.java    # Cliente HTTP para API
-│                   ├── dto/                   # Objetos de transferencia de datos
-│                   ├── utils/
-│                   │   └── SessionManager.java # Gestión de sesión
-│                   └── views/                 # Interfaces gráficas (Swing)
-│                       ├── Login.java
-│                       ├── Registro.java
-│                       ├── Reportes.java
-│                       └── CambiarContrasena.java
-├── target/                                    # Archivos compilados (generado)
-│   └── civiconnect-client.jar               # JAR ejecutable
-├── pom.xml                                   # Configuración de Maven
-├── .gitignore
-├── INSTALACION.md                            # Guía de instalación para usuarios
-└── README.md                                 # Este archivo
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/
+│   │   │       └── vectorgarman/
+│   │   │           ├── Main.java                          # Punto de entrada
+│   │   │           ├── api/
+│   │   │           │   └── ClienteAPI.java                # Cliente HTTP para API REST
+│   │   │           ├── dto/                               # Objetos de transferencia de datos
+│   │   │           │   ├── ActualizarNombreUsuarioRequest.java
+│   │   │           │   ├── ApiResponse.java
+│   │   │           │   ├── CambioContrasenaRequest.java
+│   │   │           │   ├── Colonia.java
+│   │   │           │   ├── Comentario.java
+│   │   │           │   ├── ComentarioRequest.java
+│   │   │           │   ├── CrearReporteRequest.java
+│   │   │           │   ├── EditarComentarioRequest.java
+│   │   │           │   ├── EditarReporteRequest.java
+│   │   │           │   ├── EliminarComentarioRequest.java
+│   │   │           │   ├── Estado.java
+│   │   │           │   ├── Evidencia.java
+│   │   │           │   ├── ItemReporte.java
+│   │   │           │   ├── LoginRequest.java
+│   │   │           │   ├── Municipio.java
+│   │   │           │   ├── ReporteView.java
+│   │   │           │   ├── ReporteViewDto.java
+│   │   │           │   ├── TipoUsuario.java
+│   │   │           │   ├── Ubicacion.java
+│   │   │           │   ├── Usuario.java
+│   │   │           │   ├── UsuarioRequest.java
+│   │   │           │   └── VotarReporteRequest.java
+│   │   │           ├── utils/
+│   │   │           │   └── SessionManager.java            # Gestión de sesión y tokens
+│   │   │           └── views/                             # Interfaces gráficas (Swing)
+│   │   │               ├── CambiarContrasena.form         # Diseño UI cambio contraseña
+│   │   │               ├── CambiarContrasena.java         # Lógica cambio contraseña
+│   │   │               ├── Login.form                     # Diseño UI login
+│   │   │               ├── Login.java                     # Lógica login
+│   │   │               ├── Perfil.java                    # Vista perfil usuario
+│   │   │               ├── Registro.form                  # Diseño UI registro
+│   │   │               ├── Registro.java                  # Lógica registro
+│   │   │               ├── Reportes.form                  # Diseño UI reportes
+│   │   │               └── Reportes.java                  # Lógica gestión reportes
+│   │   └── resources/
+│   │       └── assets/
+│   │           └── CiviConnectCut.png                     # Logo de la aplicación
+│   └── test/
+│       └── java/                                          # Directorio para pruebas unitarias
+├── target/                                                # Archivos compilados (generado)
+│   └── civiconnect-client.jar                             # JAR ejecutable
+├── pom.xml                                                # Configuración de Maven
+├── .gitignore                                             # Archivos ignorados por Git
+└── README.md                                              # Documentación del proyecto
 ```
 
 ## 🔧 Configuración
@@ -177,7 +208,7 @@ Todas las dependencias se empaquetan en el JAR final usando Maven Shade Plugin.
 
 ### Error: "Java version not compatible"
 
-Asegúrate de tener Java 25 o superior instalado:
+Asegúrate de tener Java 21 o superior instalado:
 ```bash
 java -version
 ```
@@ -262,10 +293,10 @@ Para soporte y preguntas:
 ## 📊 Estado del Proyecto
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Java Version](https://img.shields.io/badge/java-25-blue)
+![Java Version](https://img.shields.io/badge/java-21-blue)
 ![License](https://img.shields.io/badge/license-proprietary-red)
 
 ---
 
-**Última actualización**: 2025-11-29  
+**Última actualización**: 2025-12-01
 **Versión**: 1.0.0
