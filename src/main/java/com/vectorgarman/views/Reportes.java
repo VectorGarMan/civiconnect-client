@@ -129,9 +129,6 @@ public class Reportes extends JFrame {
         btnLimpiarFiltros.setPreferredSize(new Dimension(100, 50));
         btnLimpiarFiltros.addActionListener(e -> limpiarFiltros());
 
-        // Espaciador
-        JLabel lblEspaciador = new JLabel("                                         ");
-
         // Botón para crear reporte
         JPanel botonesPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         btnCrearReporte = new JButton("➕");
@@ -143,8 +140,33 @@ public class Reportes extends JFrame {
         btnPerfil.setPreferredSize(new Dimension(45, 35));
         btnPerfil.addActionListener(e -> abrirVentanaPerfil());
 
+        // Botón para ver mis reportes
+        JButton btnMisReportes = new JButton("📝 Mis Reportes");
+        btnMisReportes.setFont(new Font("Arial", Font.BOLD, 11));
+        btnMisReportes.setPreferredSize(new Dimension(120, 35));
+        btnMisReportes.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnMisReportes.addActionListener(e -> cargarMisReportes());
+
+        // Botón para ver reportes votados
+        JButton btnReportesVotados = new JButton("❤️ Votados");
+        btnReportesVotados.setFont(new Font("Arial", Font.BOLD, 11));
+        btnReportesVotados.setPreferredSize(new Dimension(110, 35));
+        btnReportesVotados.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnReportesVotados.addActionListener(e -> cargarReportesVotados());
+
+        // Botón para ver mis comentarios
+        JButton btnMisComentarios = new JButton("💬 Mis Comentarios");
+        btnMisComentarios.setFont(new Font("Arial", Font.BOLD, 11));
+        btnMisComentarios.setPreferredSize(new Dimension(140, 35));
+        btnMisComentarios.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnMisComentarios.addActionListener(e -> cargarMisComentarios());
+
         botonesPanel.add(btnLimpiarFiltros);
-        botonesPanel.add(lblEspaciador);
+        botonesPanel.add(Box.createHorizontalStrut(10));
+        botonesPanel.add(btnMisReportes);
+        botonesPanel.add(btnReportesVotados);
+        botonesPanel.add(btnMisComentarios);
+        botonesPanel.add(Box.createHorizontalStrut(10));
         botonesPanel.add(btnCrearReporte);
         botonesPanel.add(btnPerfil);
 
@@ -4147,5 +4169,313 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
     // ============================================
     private void abrirVentanaPerfil() {
         new Perfil(usuarioLogueado);
+    }
+
+    // ============================================
+    // CARGAR MIS REPORTES
+    // ============================================
+    private void cargarMisReportes() {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ApiResponse<?> response = api.obtenerReportesPorIdUsuario(usuarioLogueado.getIdusuario());
+
+                SwingUtilities.invokeLater(() -> {
+                    String status = response.getStatus() != null ? response.getStatus() : "";
+
+                    if ("OK".equals(status)) {
+                        Object dataObj = response.getData();
+
+                        if (dataObj instanceof List<?> reportes) {
+                            // Convertir a mapas mutables
+                            todosLosReportes.clear();
+                            for (Object item : reportes) {
+                                if (item instanceof Map<?, ?> reporteMap) {
+                                    Map<String, Object> reporteMutable = convertirAMapaMutable(reporteMap);
+                                    todosLosReportes.add(reporteMutable);
+                                }
+                            }
+
+                            // Mostrar todos los reportes del usuario sin filtros
+                            reportesFiltrados = new ArrayList<>(todosLosReportes);
+                            mostrarReportesFiltrados();
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                                response.getMensaje(),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                        "Error al conectar con el servidor:\n" + ex.getMessage(),
+                        "Error de Conexión",
+                        JOptionPane.ERROR_MESSAGE));
+            }
+        }).start();
+    }
+
+    // ============================================
+    // CARGAR REPORTES VOTADOS
+    // ============================================
+    private void cargarReportesVotados() {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ApiResponse<?> response = api.obtenerReportesVotadosPorUsuario(usuarioLogueado.getIdusuario());
+
+                SwingUtilities.invokeLater(() -> {
+                    String status = response.getStatus() != null ? response.getStatus() : "";
+
+                    if ("OK".equals(status)) {
+                        Object dataObj = response.getData();
+
+                        if (dataObj instanceof List<?> reportesVotados) {
+                            // Convertir a mapas mutables
+                            todosLosReportes.clear();
+                            for (Object item : reportesVotados) {
+                                if (item instanceof Map<?, ?> reporteMap) {
+                                    Map<String, Object> reporteMutable = convertirAMapaMutable(reporteMap);
+                                    todosLosReportes.add(reporteMutable);
+                                }
+                            }
+
+                            // Mostrar todos los reportes votados sin filtros
+                            reportesFiltrados = new ArrayList<>(todosLosReportes);
+                            mostrarReportesFiltrados();
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                                response.getMensaje(),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                        "Error al conectar con el servidor:\n" + ex.getMessage(),
+                        "Error de Conexión",
+                        JOptionPane.ERROR_MESSAGE));
+            }
+        }).start();
+    }
+
+    // ============================================
+    // CARGAR MIS COMENTARIOS
+    // ============================================
+    private void cargarMisComentarios() {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ApiResponse<?> response = api.obtenerComentariosPorIdUsuario(usuarioLogueado.getIdusuario());
+
+                SwingUtilities.invokeLater(() -> {
+                    if (response == null) {
+                        JOptionPane.showMessageDialog(this,
+                                "No se recibió respuesta del servidor",
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+
+                    String status = response.getStatus() != null ? response.getStatus() : "";
+                    System.out.println("Status de respuesta: " + status);
+                    System.out.println("Mensaje de respuesta: " + response.getMensaje());
+                    System.out.println("Datos de respuesta: " + response.getData());
+
+                    if ("OK".equals(status)) {
+                        Object dataObj = response.getData();
+
+                        if (dataObj instanceof List<?> comentarios) {
+                            System.out.println("Número de comentarios: " + comentarios.size());
+                            // Crear una ventana para mostrar los comentarios
+                            mostrarVentanaComentariosUsuario(comentarios);
+                        } else {
+                            JOptionPane.showMessageDialog(this,
+                                    "No se encontraron comentarios o el formato es incorrecto",
+                                    "Información",
+                                    JOptionPane.INFORMATION_MESSAGE);
+                        }
+                    } else {
+                        String mensaje = response.getMensaje() != null ? response.getMensaje() : "Error desconocido";
+                        JOptionPane.showMessageDialog(this,
+                                "Error del servidor: " + mensaje + "\nStatus: " + status,
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                        "Error al conectar con el servidor:\n" + ex.getMessage(),
+                        "Error de Conexión",
+                        JOptionPane.ERROR_MESSAGE));
+            }
+        }).start();
+    }
+
+    // ============================================
+    // MOSTRAR VENTANA DE COMENTARIOS DEL USUARIO
+    // ============================================
+    private void mostrarVentanaComentariosUsuario(List<?> comentarios) {
+        JDialog ventana = new JDialog(this, "Mis Comentarios", true);
+        ventana.setSize(900, 700);
+        ventana.setLocationRelativeTo(this);
+        ventana.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+        // Panel principal
+        JPanel panelPrincipal = new JPanel(new BorderLayout());
+        panelPrincipal.setBackground(new Color(240, 242, 245));
+
+        // Header
+        JPanel panelHeader = new JPanel(new BorderLayout());
+        panelHeader.setBackground(new Color(255, 255, 255));
+        panelHeader.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(220, 220, 220)),
+                BorderFactory.createEmptyBorder(15, 20, 15, 20)
+        ));
+
+        JLabel lblTitulo = new JLabel("Mis Comentarios (" + comentarios.size() + ")");
+        lblTitulo.setFont(new Font("Arial", Font.BOLD, 16));
+        lblTitulo.setForeground(new Color(30, 30, 30));
+        lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
+
+        panelHeader.add(lblTitulo, BorderLayout.CENTER);
+
+        // Panel de comentarios
+        JPanel panelComentarios = new JPanel();
+        panelComentarios.setLayout(new BoxLayout(panelComentarios, BoxLayout.Y_AXIS));
+        panelComentarios.setBackground(new Color(240, 242, 245));
+        panelComentarios.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        if (comentarios.isEmpty()) {
+            JLabel lblVacio = new JLabel("No has hecho comentarios aún");
+            lblVacio.setFont(new Font("Arial", Font.ITALIC, 14));
+            lblVacio.setForeground(Color.GRAY);
+            lblVacio.setAlignmentX(Component.LEFT_ALIGNMENT);
+            panelComentarios.add(lblVacio);
+        } else {
+            for (Object obj : comentarios) {
+                if (obj instanceof Map<?, ?> comentarioMap) {
+                    JPanel tarjetaComentario = crearTarjetaComentarioUsuario(comentarioMap, ventana);
+                    tarjetaComentario.setAlignmentX(Component.LEFT_ALIGNMENT);
+                    panelComentarios.add(tarjetaComentario);
+                    panelComentarios.add(Box.createRigidArea(new Dimension(0, 15)));
+                }
+            }
+        }
+
+        // Scroll
+        JScrollPane scrollPane = new JScrollPane(panelComentarios);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setBorder(null);
+
+        panelPrincipal.add(panelHeader, BorderLayout.NORTH);
+        panelPrincipal.add(scrollPane, BorderLayout.CENTER);
+
+        ventana.add(panelPrincipal);
+        ventana.setVisible(true);
+    }
+
+    // ============================================
+    // CREAR TARJETA DE COMENTARIO DEL USUARIO
+    // ============================================
+    private JPanel crearTarjetaComentarioUsuario(Map<?, ?> comentarioMap, JDialog ventanaActual) {
+        Long idComentario = comentarioMap.get("idcomentario") != null
+                ? ((Number) comentarioMap.get("idcomentario")).longValue() : null;
+        Long idReporte = comentarioMap.get("idreporte") != null
+                ? ((Number) comentarioMap.get("idreporte")).longValue() : null;
+        String contenido = comentarioMap.get("contenido") != null
+                ? comentarioMap.get("contenido").toString() : "";
+        String fechaCreacion = comentarioMap.get("fechacreacion") != null
+                ? comentarioMap.get("fechacreacion").toString() : "";
+        Boolean editado = comentarioMap.get("editado") != null
+                ? (Boolean) comentarioMap.get("editado") : false;
+
+        // Panel principal
+        JPanel tarjeta = new JPanel();
+        tarjeta.setLayout(new BorderLayout(15, 0));
+        tarjeta.setBackground(Color.WHITE);
+        tarjeta.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 220, 220), 1),
+                BorderFactory.createEmptyBorder(15, 15, 15, 15)
+        ));
+
+        // Avatar
+        JPanel panelAvatar = crearAvatar(usuarioLogueado.getNombreusuario(),
+                usuarioLogueado.getEmpleadogubverificado() != null && usuarioLogueado.getEmpleadogubverificado(),
+                50);
+
+        // Panel de contenido
+        JPanel panelContenido = new JPanel();
+        panelContenido.setLayout(new BoxLayout(panelContenido, BoxLayout.Y_AXIS));
+        panelContenido.setBackground(Color.WHITE);
+
+        // Encabezado
+        JPanel panelEncabezado = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        panelEncabezado.setBackground(Color.WHITE);
+        panelEncabezado.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lblUsuario = new JLabel(usuarioLogueado.getNombreusuario());
+        lblUsuario.setFont(new Font("Arial", Font.BOLD, 13));
+        lblUsuario.setForeground(new Color(30, 30, 30));
+
+        JLabel lblFecha = new JLabel(" • " + fechaCreacion + (editado ? " (editado)" : ""));
+        lblFecha.setFont(new Font("Arial", Font.PLAIN, 13));
+        lblFecha.setForeground(Color.GRAY);
+
+        JLabel lblReporte = new JLabel(" • Reporte #" + idReporte);
+        lblReporte.setFont(new Font("Arial", Font.PLAIN, 13));
+        lblReporte.setForeground(new Color(13, 110, 253));
+
+        panelEncabezado.add(lblUsuario);
+        panelEncabezado.add(lblFecha);
+        panelEncabezado.add(lblReporte);
+
+        // Contenido
+        JTextArea txtContenido = new JTextArea(contenido);
+        txtContenido.setLineWrap(true);
+        txtContenido.setWrapStyleWord(true);
+        txtContenido.setEditable(false);
+        txtContenido.setFont(new Font("Arial", Font.PLAIN, 13));
+        txtContenido.setBackground(Color.WHITE);
+        txtContenido.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0));
+
+        JScrollPane scrollContenido = new JScrollPane(txtContenido);
+        scrollContenido.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollContenido.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollContenido.setBorder(null);
+        scrollContenido.setBackground(Color.WHITE);
+        scrollContenido.setAlignmentX(Component.LEFT_ALIGNMENT);
+        scrollContenido.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+        scrollContenido.setPreferredSize(new Dimension(600, Math.min(txtContenido.getPreferredSize().height + 10, 120)));
+
+        // Botón para ver el reporte
+        JButton btnVerReporte = new JButton("Ver Reporte Completo");
+        btnVerReporte.setFont(new Font("Arial", Font.PLAIN, 12));
+        btnVerReporte.setForeground(new Color(13, 110, 253));
+        btnVerReporte.setBorderPainted(false);
+        btnVerReporte.setContentAreaFilled(false);
+        btnVerReporte.setFocusPainted(false);
+        btnVerReporte.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnVerReporte.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        btnVerReporte.addActionListener(e -> {
+            ventanaActual.dispose();
+            abrirVentanaComentarios(idReporte);
+        });
+
+        panelContenido.add(panelEncabezado);
+        panelContenido.add(scrollContenido);
+        panelContenido.add(btnVerReporte);
+
+        tarjeta.add(panelAvatar, BorderLayout.WEST);
+        tarjeta.add(panelContenido, BorderLayout.CENTER);
+        tarjeta.setMaximumSize(new Dimension(850, tarjeta.getPreferredSize().height));
+
+        return tarjeta;
     }
 }
