@@ -117,7 +117,7 @@ public class Perfil extends JFrame {
         panelBotonSalir.setAlignmentX(Component.CENTER_ALIGNMENT);
         panelBotonSalir.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         
-        JButton btnSalir = new JButton("Salir");
+        JButton btnSalir = new JButton("Regresar");
         btnSalir.setFont(new Font("Arial", Font.BOLD, 14));
         btnSalir.setForeground(new Color(13, 110, 253));
         btnSalir.setBackground(new Color(240, 248, 255));
@@ -437,7 +437,7 @@ public class Perfil extends JFrame {
                         cancelarEdicionNombre();
                     } else {
                         btnGuardarNombre.setEnabled(true);
-                        btnGuardarNombre.setText("✓ Guardar");
+                        btnGuardarNombre.setText("Guardar");
                         JOptionPane.showMessageDialog(this,
                                 "Error al actualizar el nombre: " + 
                                 (response != null ? response.getMensaje() : "Error desconocido"),
@@ -448,7 +448,7 @@ public class Perfil extends JFrame {
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
                     btnGuardarNombre.setEnabled(true);
-                    btnGuardarNombre.setText("✓ Guardar");
+                    btnGuardarNombre.setText("Guardar");
                     JOptionPane.showMessageDialog(this,
                             "Error al conectar con el servidor: " + ex.getMessage(),
                             "Error de Conexión",
@@ -506,10 +506,10 @@ public class Perfil extends JFrame {
                                 JOptionPane.INFORMATION_MESSAGE);
                         
                         btnGuardarUbicacion.setEnabled(true);
-                        btnGuardarUbicacion.setText("✓ Guardar");
+                        btnGuardarUbicacion.setText("Guardar");
                     } else {
                         btnGuardarUbicacion.setEnabled(true);
-                        btnGuardarUbicacion.setText("✓ Guardar");
+                        btnGuardarUbicacion.setText("Guardar");
                         JOptionPane.showMessageDialog(this,
                                 "Error al actualizar la ubicación: " +
                                 (response != null ? response.getMensaje() : "Error desconocido"),
@@ -520,7 +520,7 @@ public class Perfil extends JFrame {
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
                     btnGuardarUbicacion.setEnabled(true);
-                    btnGuardarUbicacion.setText("✓ Guardar");
+                    btnGuardarUbicacion.setText("Guardar");
                     JOptionPane.showMessageDialog(this,
                             "Error al conectar con el servidor: " + ex.getMessage(),
                             "Error de Conexión",

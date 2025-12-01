@@ -612,7 +612,7 @@ public class Reportes extends JFrame {
                             }
                             comboColonia.setEnabled(true);
                         } else {
-                            System.out.println("⚠️ No se agregaron colonias al combo");
+                            System.out.println("No se agregaron colonias al combo");
                         }
                     } else {
                         System.out.println("❌ Error en respuesta. Status: " + status + ", Data type: " +
@@ -4322,7 +4322,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
         panelAviso.setAlignmentX(Component.LEFT_ALIGNMENT);
         panelAviso.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
         
-        JLabel lblAviso = new JLabel("<html><b>⚠️ Modo Gubernamental:</b> Solo puede cambiar el estado del reporte</html>");
+        JLabel lblAviso = new JLabel("<html><b>Modo Gubernamental:</b> Solo puede cambiar el estado del reporte</html>");
         lblAviso.setFont(new Font("Arial", Font.PLAIN, 12));
         lblAviso.setForeground(new Color(133, 100, 4));
         panelAviso.add(lblAviso);
