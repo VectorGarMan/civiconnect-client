@@ -721,4 +721,32 @@ public class ClienteAPI {
 
         return gson.fromJson(response.body(), ApiResponse.class);
     }
+
+    public ApiResponse<?> actualizarNombreUsuario(Long idusuario, String nuevoNombreUsuario, Long idcolonia) throws Exception {
+        // Crear el objeto ActualizarNombreUsuarioRequest
+        ActualizarNombreUsuarioRequest request = new ActualizarNombreUsuarioRequest();
+        request.setIdusuario(idusuario);
+        request.setNuevoNombreUsuario(nuevoNombreUsuario);
+        request.setIdcolonia(idcolonia);
+
+        // Convertir el objeto a JSON
+        String jsonBody = gson.toJson(request);
+
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/usuarios/actualizarNombreUsuario"))
+                    .header("Content-Type", "application/json")
+                    .PUT(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            response = client.send(
+                    httpRequest,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        // Parsear la respuesta
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
 }
