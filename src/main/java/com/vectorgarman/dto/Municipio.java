@@ -55,7 +55,6 @@ public class Municipio {
 
     @Override
     public String toString() {
-        // Esto es lo que se mostrará en el ComboBox
         return nombre;
     }
 }

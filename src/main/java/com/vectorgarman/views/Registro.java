@@ -33,7 +33,6 @@ public class Registro extends JDialog {
         cargarEstados();
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        // Agregar listener para cerrar el programa al cerrar la ventana
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -50,6 +49,9 @@ public class Registro extends JDialog {
         setModal(true);
     }
 
+    /**
+     * Inicializa y configura todos los componentes visuales del formulario de registro.
+     */
     private void inicializarComponentes() {
         contentPane = new JPanel();
         contentPane.setBackground(new Color(245, 245, 245));
@@ -62,10 +64,8 @@ public class Registro extends JDialog {
 
         int row = 0;
 
-        // Logo CiviConnect
         try {
             BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/assets/CiviConnectCut.png"));
-            // Escalar proporcionalmente: ancho 400px, altura = 400 * (330/1536) ≈ 86px
             Image scaledLogo = logoImg.getScaledInstance(400, 86, Image.SCALE_SMOOTH);
             JLabel lblLogo = new JLabel(new ImageIcon(scaledLogo));
             lblLogo.setHorizontalAlignment(SwingConstants.CENTER);
@@ -78,7 +78,6 @@ public class Registro extends JDialog {
             System.err.println("Error al cargar el logo: " + e.getMessage());
         }
 
-        // Título "REGISTRO"
         JLabel lblTitulo = new JLabel("REGISTRO");
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 32));
         lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
@@ -88,9 +87,6 @@ public class Registro extends JDialog {
         gbc.insets = new Insets(20, 10, 20, 10);
         contentPane.add(lblTitulo, gbc);
 
-        // COLUMNA IZQUIERDA
-
-        // Tipo de Usuario
         JLabel lblTipoUsuario = new JLabel("Tipo de Usuario:");
         lblTipoUsuario.setFont(new Font("Arial", Font.PLAIN, 14));
         gbc.gridx = 0;
@@ -108,7 +104,6 @@ public class Registro extends JDialog {
         gbc.insets = new Insets(0, 10, 10, 5);
         contentPane.add(comboTipoUsuario, gbc);
 
-        // Email
         JLabel lblEmail = new JLabel("Email:");
         lblEmail.setFont(new Font("Arial", Font.PLAIN, 14));
         gbc.gridx = 0;
@@ -126,7 +121,6 @@ public class Registro extends JDialog {
         gbc.insets = new Insets(0, 10, 10, 5);
         contentPane.add(emailField, gbc);
 
-        // Nombre de Usuario
         JLabel lblNombreUsuario = new JLabel("Nombre de Usuario:");
         lblNombreUsuario.setFont(new Font("Arial", Font.PLAIN, 14));
         gbc.gridx = 0;
@@ -144,7 +138,6 @@ public class Registro extends JDialog {
         gbc.insets = new Insets(0, 10, 10, 5);
         contentPane.add(nombreUsuarioField, gbc);
 
-        // Contraseña
         JLabel lblPassword = new JLabel("Contraseña:");
         lblPassword.setFont(new Font("Arial", Font.PLAIN, 14));
         gbc.gridx = 0;
@@ -162,9 +155,6 @@ public class Registro extends JDialog {
         gbc.insets = new Insets(0, 10, 10, 5);
         contentPane.add(passwordField, gbc);
 
-        // COLUMNA DERECHA
-
-        // Estado
         JLabel lblEstado = new JLabel("Estado:");
         lblEstado.setFont(new Font("Arial", Font.PLAIN, 14));
         gbc.gridx = 1;
@@ -182,7 +172,6 @@ public class Registro extends JDialog {
         gbc.insets = new Insets(0, 5, 10, 10);
         contentPane.add(comboEstado, gbc);
 
-        // Municipio
         JLabel lblMunicipio = new JLabel("Municipio:");
         lblMunicipio.setFont(new Font("Arial", Font.PLAIN, 14));
         gbc.gridx = 1;
@@ -212,7 +201,6 @@ public class Registro extends JDialog {
             }
         });
 
-        // Colonia
         JLabel lblColonia = new JLabel("Colonia:");
         lblColonia.setFont(new Font("Arial", Font.PLAIN, 14));
         gbc.gridx = 1;
@@ -244,7 +232,6 @@ public class Registro extends JDialog {
             }
         });
 
-        // Botón Registrar
         btnRegistrar = new JButton("Registrar Usuario");
         btnRegistrar.setFont(new Font("Arial", Font.BOLD, 14));
         btnRegistrar.setBackground(new Color(60, 179, 113));
@@ -262,7 +249,6 @@ public class Registro extends JDialog {
         gbc.insets = new Insets(15, 10, 10, 10);
         contentPane.add(btnRegistrar, gbc);
 
-        // Botón Iniciar Sesión
         btnIniciarSesion = new JButton("Iniciar Sesión");
         btnIniciarSesion.setFont(new Font("Arial", Font.PLAIN, 14));
         btnIniciarSesion.setBackground(new Color(70, 130, 180));
@@ -280,7 +266,6 @@ public class Registro extends JDialog {
         gbc.insets = new Insets(5, 10, 10, 10);
         contentPane.add(btnIniciarSesion, gbc);
 
-        // Cerrar con ESC
         contentPane.registerKeyboardAction(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 dispose();
@@ -288,13 +273,14 @@ public class Registro extends JDialog {
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
     }
 
+    /**
+     * Procesa el registro de un nuevo usuario validando los datos y enviándolos al servidor.
+     */
     private void onRegistrar() {
-        // Obtener valores
         String email = emailField.getText().trim();
         String nombreUsuario = nombreUsuarioField.getText().trim();
         String password = new String(passwordField.getPassword());
 
-        // Validación de campos vacíos
         if (email.isEmpty() ||
                 nombreUsuario.isEmpty() ||
                 password.isEmpty() ||
@@ -310,18 +296,14 @@ public class Registro extends JDialog {
             return;
         }
 
-        // Deshabilitar botón mientras se procesa
         btnRegistrar.setEnabled(false);
         btnRegistrar.setText("Registrando...");
 
-        // Hilo separado para no bloquear la UI
         new Thread(() -> {
             try {
-                // Obtener las entidades seleccionadas desde los ComboBox
                 TipoUsuario tipoSeleccionado = (TipoUsuario) comboTipoUsuario.getSelectedItem();
                 Colonia coloniaSeleccionada = (Colonia) comboColonia.getSelectedItem();
 
-                // Extraer los IDs reales directamente del objeto seleccionado
                 Long idTipoUsuario = tipoSeleccionado != null ? tipoSeleccionado.getIdtipousuario().longValue() : null;
                 Long idColonia = coloniaSeleccionada != null ? coloniaSeleccionada.getIdcolonia().longValue() : null;
 
@@ -376,14 +358,18 @@ public class Registro extends JDialog {
         }).start();
     }
 
-
+    /**
+     * Cierra la ventana de registro y abre la ventana de login.
+     */
     private void onIniciarSesion() {
-        // Cerrar ventana de registro y abrir login
         dispose();
         Login loginDialog = new Login();
         loginDialog.setVisible(true);
     }
 
+    /**
+     * Carga el catálogo de tipos de usuario desde el servidor y los muestra en el combo box.
+     */
     private void cargarTiposDeUsuario() {
         new Thread(() -> {
             try {
@@ -442,6 +428,9 @@ public class Registro extends JDialog {
         }).start();
     }
 
+    /**
+     * Carga el catálogo de estados desde el servidor y los muestra en el combo box.
+     */
     private void cargarEstados() {
         new Thread(() -> {
             try {
@@ -492,7 +481,7 @@ public class Registro extends JDialog {
 
                     } else {
                         JOptionPane.showMessageDialog(this,
-                                response.getMensaje(), // ← Ya no usas getFieldValue()
+                                response.getMensaje(),
                                 "Error",
                                 JOptionPane.ERROR_MESSAGE);
                     }
@@ -510,7 +499,9 @@ public class Registro extends JDialog {
         }).start();
     }
 
-
+    /**
+     * Carga los municipios correspondientes al estado seleccionado.
+     */
     private void cargarMunicipios(Long idestado) {
         new Thread(() -> {
             try {
@@ -561,7 +552,9 @@ public class Registro extends JDialog {
         }).start();
     }
 
-
+    /**
+     * Carga las colonias correspondientes al municipio seleccionado.
+     */
     private void cargarColonias(Long idmunicipio) {
         new Thread(() -> {
             try {
@@ -612,6 +605,9 @@ public class Registro extends JDialog {
         }).start();
     }
 
+    /**
+     * Método principal para ejecutar la ventana de registro de forma independiente.
+     */
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());

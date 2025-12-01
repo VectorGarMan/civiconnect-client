@@ -1,15 +1,37 @@
 package com.vectorgarman.views;
 
-import com.vectorgarman.api.ClienteAPI;
-import com.vectorgarman.dto.ApiResponse;
-
-import javax.swing.*;
-import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+
+import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
+import com.vectorgarman.api.ClienteAPI;
+import com.vectorgarman.dto.ApiResponse;
 
 public class CambiarContrasena extends JDialog {
 
@@ -31,16 +53,13 @@ public class CambiarContrasena extends JDialog {
         setModal(true);
         setResizable(false);
 
-        // Panel superior con logo y título
         JPanel panelSuperior = new JPanel();
         panelSuperior.setLayout(new BoxLayout(panelSuperior, BoxLayout.Y_AXIS));
         panelSuperior.setBackground(Color.WHITE);
         panelSuperior.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Logo CiviConnect
         try {
             BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/assets/CiviConnectCut.png"));
-            // Escalar proporcionalmente: ancho 300px, altura = 300 * (330/1536) ≈ 64px
             Image scaledLogo = logoImg.getScaledInstance(300, 64, Image.SCALE_SMOOTH);
             JLabel lblLogo = new JLabel(new ImageIcon(scaledLogo));
             lblLogo.setHorizontalAlignment(SwingConstants.CENTER);
@@ -86,6 +105,9 @@ public class CambiarContrasena extends JDialog {
         setVisible(true);
     }
 
+    /**
+     * Inicializa el panel para solicitar el email del usuario.
+     */
     private void inicializarPanelEmail() {
         emailPanel = new JPanel(new GridLayout(3, 1, 5, 5));
         emailPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
@@ -113,6 +135,9 @@ public class CambiarContrasena extends JDialog {
         emailPanel.add(btnPanel);
     }
 
+    /**
+     * Inicializa el panel para ingresar el token de verificación y la nueva contraseña.
+     */
     private void inicializarPanelToken() {
         tokenPanel = new JPanel(new GridLayout(5, 1, 5, 5));
         tokenPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -145,6 +170,9 @@ public class CambiarContrasena extends JDialog {
         tokenPanel.add(btnPanel);
     }
 
+    /**
+     * Procesa la solicitud de recuperación de contraseña enviando un token al email.
+     */
     private void onEmailOk() {
         String email = txtEmail.getText().trim();
 
@@ -195,6 +223,9 @@ public class CambiarContrasena extends JDialog {
         }).start();
     }
 
+    /**
+     * Procesa el cambio de contraseña utilizando el token de verificación.
+     */
     private void onTokenOk() {
         String token = txtToken.getText().trim();
         String nuevaPass = new String(txtNuevaPassword.getPassword()).trim();
@@ -240,11 +271,17 @@ public class CambiarContrasena extends JDialog {
         }).start();
     }
 
+    /**
+     * Cierra la ventana actual y abre la ventana de login.
+     */
     private void volverALogin() {
         dispose();
         new Login().setVisible(true);
     }
 
+    /**
+     * Método principal para ejecutar la ventana de cambio de contraseña de forma independiente.
+     */
     public static void main(String[] args) {
         new CambiarContrasena();
     }

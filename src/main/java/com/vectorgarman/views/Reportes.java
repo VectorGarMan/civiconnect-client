@@ -646,15 +646,12 @@ public class Reportes extends JFrame {
                         // Reemplazar el reporte en la lista
                         todosLosReportes.set(i, nuevoReporteMutable);
                         
-                        System.out.println("✅ Reporte actualizado en lista local: ID=" + idReporte);
-                        
                         // Verificar si tiene fechaactualizacion
                         Map<?, ?> nuevoReporteView = nuevoReporteMutable.get("reporteView") instanceof Map
                                 ? (Map<?, ?>) nuevoReporteMutable.get("reporteView")
                                 : null;
                         if (nuevoReporteView != null) {
                             Object fechaActualizacion = nuevoReporteView.get("fechaactualizacion");
-                            System.out.println("📅 Fecha de actualización: " + fechaActualizacion);
                         }
                         
                         break;
@@ -4278,18 +4275,39 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                 try {
                     ClienteAPI api = new ClienteAPI();
                     
-                    // Obtener datos actuales del reporte para mantenerlos
-                    Long idusuariocreador = reporteView.get("idusuariocreador") != null ?
-                        ((Number) reporteView.get("idusuariocreador")).longValue() : null;
-                    Long idcolonia = reporteView.get("idcolonia") != null ?
-                        ((Number) reporteView.get("idcolonia")).longValue() : null;
-                    Long idnivelprioridad = reporteView.get("idnivelprioridad") != null ?
-                        ((Number) reporteView.get("idnivelprioridad")).longValue() : null;
-                    Long idcategoria = reporteView.get("idcategoria") != null ?
-                        ((Number) reporteView.get("idcategoria")).longValue() : null;
-                    String calle = reporteView.get("calle") != null ? reporteView.get("calle").toString() : "";
-                    String referencia = reporteView.get("referencia") != null ? reporteView.get("referencia").toString() : "";
+                    // ⭐ SOLUCIÓN: Obtener el reporte completo del servidor con todos los IDs usando obtenerEntidadPorId
+                    ApiResponse<?> responseReporte = api.obtenerEntidadPorId(idReporte);
                     
+                    if (responseReporte == null || !responseReporte.isSuccess()) {
+                        throw new Exception("No se pudo obtener el reporte del servidor");
+                    }
+                    
+                    Map<?, ?> reporteCompleto = (Map<?, ?>) responseReporte.getData();
+                    
+                    if (reporteCompleto == null) {
+                        throw new Exception("Estructura de reporte inválida");
+                    }
+                    
+                    // Extraer IDs directamente del reporte completo (entidad)
+                    Long idusuariocreador = reporteCompleto.get("idusuario") != null ?
+                        ((Number) reporteCompleto.get("idusuario")).longValue() : null;
+                    Long idcolonia = reporteCompleto.get("idcolonia") != null ?
+                        ((Number) reporteCompleto.get("idcolonia")).longValue() : null;
+                    Long idnivelprioridad = reporteCompleto.get("idnivelprioridad") != null ?
+                        ((Number) reporteCompleto.get("idnivelprioridad")).longValue() : null;
+                    Long idcategoria = reporteCompleto.get("idcategoria") != null ?
+                        ((Number) reporteCompleto.get("idcategoria")).longValue() : null;
+                    String calle = reporteCompleto.get("calle") != null ?
+                        reporteCompleto.get("calle").toString() : "";
+                    String referencia = reporteCompleto.get("referencia") != null ?
+                        reporteCompleto.get("referencia").toString() : "";
+                    String titulo = reporteCompleto.get("titulo") != null ?
+                        reporteCompleto.get("titulo").toString() : "";
+                    String descripcion = reporteCompleto.get("descripcion") != null ?
+                        reporteCompleto.get("descripcion").toString() : "";
+                    String solucion = reporteCompleto.get("solucionpropuesta") != null ?
+                        reporteCompleto.get("solucionpropuesta").toString() : "";
+
                     // Llamar a editarReporte pero solo cambiando el estado
                     ApiResponse<?> response = api.editarReporte(
                         idReporte,
@@ -4298,15 +4316,15 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                         idnivelprioridad,
                         idEstadoReporteNuevo, // ⭐ SOLO ESTE CAMPO CAMBIA
                         idcategoria,
-                        tituloActual,
-                        descripcionActual,
-                        solucionActual,
+                        titulo,
+                        descripcion,
+                        solucion,
                         calle,
                         referencia,
                         new ArrayList<>(), // Sin nuevas evidencias
                         new ArrayList<>()  // Sin eliminar evidencias
                     );
-
+            
                     SwingUtilities.invokeLater(() -> {
                         if (response != null && response.isSuccess()) {
                             // Actualizar el reporte localmente
@@ -4680,15 +4698,11 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                     }
 
                     String status = response.getStatus() != null ? response.getStatus() : "";
-                    System.out.println("Status de respuesta: " + status);
-                    System.out.println("Mensaje de respuesta: " + response.getMensaje());
-                    System.out.println("Datos de respuesta: " + response.getData());
 
                     if ("OK".equals(status)) {
                         Object dataObj = response.getData();
 
                         if (dataObj instanceof List<?> comentarios) {
-                            System.out.println("Número de comentarios: " + comentarios.size());
                             // Crear una ventana para mostrar los comentarios
                             mostrarVentanaComentariosUsuario(comentarios);
                         } else {

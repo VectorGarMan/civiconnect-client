@@ -19,9 +19,6 @@ public class ClienteAPI {
 
     private static final String BASE_URL = "http://localhost:8080/api";
 
-//    private static final String BASE_URL = "https://civiconnect-api.onrender.com/api";
-
-    // Gson configurado para reutilizar
     private final Gson gson = new GsonBuilder()
             .registerTypeAdapter(LocalDate.class,
                     (com.google.gson.JsonDeserializer<LocalDate>) (json, t, ctx) ->
@@ -33,20 +30,13 @@ public class ClienteAPI {
     private static final HttpClient httpClient = HttpClient.newHttpClient();
 
     /**
-     * Realiza el login del usuario
-     *
-     * @param email      Email del usuario
-     * @param contrasena Contraseña del usuario
-     * @return ApiResponse con el usuario si las credenciales son correctas
-     * @throws Exception Si hay algún error en la comunicación
+     * Autentica un usuario con sus credenciales de email y contraseña.
      */
     public ApiResponse<?> login(String email, String contrasena) throws Exception {
-        // Crear el objeto LoginRequest
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail(email);
         loginRequest.setContrasena(contrasena);
 
-        // Convertir el objeto a JSON
         String jsonBody = gson.toJson(loginRequest);
 
         HttpResponse<String> response;
@@ -63,19 +53,19 @@ public class ClienteAPI {
             );
         }
 
-        // Parsear la respuesta
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Crea un nuevo comentario en un reporte, puede ser comentario principal o respuesta.
+     */
     public ApiResponse<?> crearComentario(Long idusuario, Long idreporte, Long idcomentariopadre, String contenido) throws Exception {
-        // Crear el objeto LoginRequest
         ComentarioRequest comentarioRequest = new ComentarioRequest();
         comentarioRequest.setIdusuario(idusuario);
         comentarioRequest.setIdreporte(idreporte);
         comentarioRequest.setIdcomentariopadre(idcomentariopadre);
         comentarioRequest.setContenido(contenido);
 
-        // Convertir el objeto a JSON
         String jsonBody = gson.toJson(comentarioRequest);
 
         HttpResponse<String> response;
@@ -92,13 +82,12 @@ public class ClienteAPI {
             );
         }
 
-        // Parsear la respuesta
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
-    // -----------------------------------------------------------------
-
-    // Este metodo, sirve para obtener las evidencias de un solo reporte para cuando se va a editar uno.
+    /**
+     * Obtiene todas las evidencias asociadas a un reporte específico.
+     */
     public ApiResponse<?> obtenerEvidenciaPorReporte(Long idreporte) throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -114,10 +103,12 @@ public class ClienteAPI {
             );
         }
 
-        // Parsear la respuesta
         return gson.fromJson(response.body(), ApiResponse.class);
     }
-    // Este metodo sirve para obtener las categorías que van a ir en un combobox al crear reporte o editarlo
+
+    /**
+     * Obtiene el catálogo de categorías disponibles para clasificar reportes.
+     */
     public ApiResponse<?> obtenerCategoriasDeReporte() throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -137,7 +128,9 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
-    // Este metodo sirve para obtener los estados de reporte que van a ir en un combobox al crear reporte o editarlo
+    /**
+     * Obtiene el catálogo de estados posibles para un reporte (pendiente, en proceso, resuelto, etc.).
+     */
     public ApiResponse<?> obtenerEstadosDeReporte() throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -157,7 +150,9 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
-    // Este metodo sirve para obtener los niveles de prioridad de reporte que van a ir en un combobox al crear reporte o editarlo
+    /**
+     * Obtiene el catálogo de niveles de prioridad para clasificar la urgencia de los reportes.
+     */
     public ApiResponse<?> obtenerNivelesDePrioridad() throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -177,7 +172,9 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
-    // Este metodo sirve para editar un reporte.
+    /**
+     * Actualiza un reporte existente con nueva información, evidencias adicionales y eliminación de evidencias.
+     */
     public ApiResponse<?> editarReporte(
             Long idreporte, Long idusuario, Long idcolonia, Long idnivelprioridad,
             Long idestadoreporte, Long idcategoria, String titulo,
@@ -185,7 +182,6 @@ public class ClienteAPI {
             String referencia, List<File> evidenciasAgregar,
             List<Long> evidenciasIdsEliminar) throws Exception {
 
-        // 1) Construir el objeto reporte con idreporte
         EditarReporteRequest requestData = new EditarReporteRequest();
         requestData.setIdreporte(idreporte);
         requestData.setIdusuario(idusuario);
@@ -205,7 +201,6 @@ public class ClienteAPI {
         String boundary = "----CiviConnectBoundary" + System.currentTimeMillis();
         var parts = new ArrayList<byte[]>();
 
-        // Parte del JSON reporte
         parts.add((
                 "--" + boundary + "\r\n" +
                         "Content-Disposition: form-data; name=\"reporte\"\r\n" +
@@ -213,7 +208,6 @@ public class ClienteAPI {
                         jsonReporte + "\r\n"
         ).getBytes());
 
-        // Parte de IDs de evidencias a eliminar
         parts.add((
                 "--" + boundary + "\r\n" +
                         "Content-Disposition: form-data; name=\"evidenciasIdsEliminar\"\r\n" +
@@ -221,7 +215,6 @@ public class ClienteAPI {
                         jsonEvidenciasEliminar + "\r\n"
         ).getBytes());
 
-        // Nuevas evidencias (si existen)
         if (evidenciasAgregar != null) {
             for (File evidencia : evidenciasAgregar) {
                 parts.add((
@@ -235,10 +228,8 @@ public class ClienteAPI {
             }
         }
 
-        // Cierre del multipart
         parts.add(("--" + boundary + "--").getBytes());
 
-        // Request HTTP
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI(BASE_URL + "/reporte/crearActualizar"))
                 .header("Content-Type", "multipart/form-data; boundary=" + boundary)
@@ -253,14 +244,15 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
-    // Este metodo sirve para crear un reporte.
+    /**
+     * Crea un nuevo reporte con su información básica y evidencias adjuntas.
+     */
     public ApiResponse<?> crearReporte(
             Long idusuario, Long idcolonia, Long idnivelprioridad,
             Long idestadoreporte, Long idcategoria, String titulo,
             String descripcion, String solucionpropuesta, String calle,
             String referencia, List<File> evidencias) throws Exception {
 
-        // 1) Construir el objeto JSON como hace tu curl
         CrearReporteRequest crearReporteRequest = new CrearReporteRequest();
         crearReporteRequest.setIdusuario(idusuario);
         crearReporteRequest.setIdcolonia(idcolonia);
@@ -275,12 +267,10 @@ public class ClienteAPI {
 
         String jsonReporte = gson.toJson(crearReporteRequest);
 
-        // 2) Generar límites y construir multipart
         String boundary = "----CiviConnectBoundary" + System.currentTimeMillis();
 
         var byteArrays = new ArrayList<byte[]>();
 
-        // Parte del JSON
         byteArrays.add((
                 "--" + boundary + "\r\n" +
                         "Content-Disposition: form-data; name=\"reporte\"\r\n" +
@@ -288,7 +278,6 @@ public class ClienteAPI {
                         jsonReporte + "\r\n"
         ).getBytes());
 
-        // 3) Adjuntar archivos evidencia
         for (File evidencia : evidencias) {
             byteArrays.add((
                     "--" + boundary + "\r\n" +
@@ -300,10 +289,8 @@ public class ClienteAPI {
             byteArrays.add("\r\n".getBytes());
         }
 
-        // Cierre del multipart
         byteArrays.add(("--" + boundary + "--").getBytes());
 
-        // 4) Crear request HTTP
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI(BASE_URL + "/reporte/crearActualizar"))
                 .header("Content-Type", "multipart/form-data; boundary=" + boundary)
@@ -315,11 +302,10 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
-    // ------------------------------------------------------------
-
+    /**
+     * Modifica el contenido de un comentario existente.
+     */
     public ApiResponse<?> actualizarComentario(Long idcomentario, Long idusuario, Long idreporte, Long idcomentariopadre, String contenido) throws Exception {
-        // Crear el objeto LoginRequest
-
         EditarComentarioRequest editarComentarioRequest = new EditarComentarioRequest();
         editarComentarioRequest.setIdcomentario(idcomentario);
         editarComentarioRequest.setIdusuario(idusuario);
@@ -327,7 +313,6 @@ public class ClienteAPI {
         editarComentarioRequest.setIdcomentariopadre(idcomentariopadre);
         editarComentarioRequest.setContenido(contenido);
 
-        // Convertir el objeto a JSON
         String jsonBody = gson.toJson(editarComentarioRequest);
 
         HttpResponse<String> response;
@@ -344,12 +329,13 @@ public class ClienteAPI {
             );
         }
 
-        // Parsear la respuesta
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Registra un nuevo usuario en el sistema con sus datos básicos.
+     */
     public ApiResponse<?> crearUsuario(Long idtipousuario, Long idcolonia, String email, String contrasena, String nombreusuario) throws Exception {
-        // Crear el objeto UsuarioRequest
         UsuarioRequest usuarioRequest = new UsuarioRequest();
         usuarioRequest.setIdtipousuario(idtipousuario);
         usuarioRequest.setIdcolonia(idcolonia);
@@ -357,7 +343,6 @@ public class ClienteAPI {
         usuarioRequest.setContrasena(contrasena);
         usuarioRequest.setNombreusuario(nombreusuario);
 
-        // Convertir el objeto a JSON
         String jsonBody = gson.toJson(usuarioRequest);
 
         HttpResponse<String> response;
@@ -374,10 +359,12 @@ public class ClienteAPI {
             );
         }
 
-        // Parsear la respuesta
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Obtiene el catálogo de tipos de usuario disponibles en el sistema.
+     */
     public ApiResponse<?> obtenerTiposDeUsuario() throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -397,6 +384,9 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Obtiene el catálogo de estados de la República Mexicana.
+     */
     public ApiResponse<?> obtenerEstados() throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -416,6 +406,9 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Obtiene la lista completa de todos los reportes registrados en el sistema.
+     */
     public ApiResponse<?> obtenerTodosLosReportes() throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -435,6 +428,9 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Inicia el proceso de recuperación de contraseña enviando un token al email del usuario.
+     */
     public ApiResponse<?> olvideContrasena(String email) throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -450,18 +446,18 @@ public class ClienteAPI {
             );
         }
 
-        // Parsear la respuesta
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Cambia la contraseña de un usuario utilizando el token de recuperación.
+     */
     public ApiResponse<?> cambiarContrasena(String token, String nuevaContrasena, String email) throws Exception {
-        // Crear el objeto UsuarioRequest
         CambioContrasenaRequest cambioContrasenaRequest = new CambioContrasenaRequest();
         cambioContrasenaRequest.setToken(token);
         cambioContrasenaRequest.setNuevaContrasena(nuevaContrasena);
         cambioContrasenaRequest.setEmail(email);
 
-        // Convertir el objeto a JSON
         String jsonBody = gson.toJson(cambioContrasenaRequest);
 
         HttpResponse<String> response;
@@ -478,10 +474,12 @@ public class ClienteAPI {
             );
         }
 
-        // Parsear la respuesta
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Obtiene la lista de municipios pertenecientes a un estado específico.
+     */
     public ApiResponse<?> obtenerMunicipios(Long idestado) throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -497,10 +495,12 @@ public class ClienteAPI {
             );
         }
 
-        // Parsear la respuesta
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Obtiene la información de ubicación completa de un usuario específico.
+     */
     public ApiResponse<?> obtenerUbicacionPorIdUsuario(Long idusuario) throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -516,10 +516,12 @@ public class ClienteAPI {
             );
         }
 
-        // Parsear la respuesta
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Registra el voto de un usuario a favor de un reporte.
+     */
     public ApiResponse<?> votarReporte(Long idReporte, Long idUsuario) throws Exception {
         VotarReporteRequest requestBody = new VotarReporteRequest();
         requestBody.setIdreporte(idReporte);
@@ -544,6 +546,9 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Elimina el voto previamente registrado por un usuario en un reporte.
+     */
     public ApiResponse<?> quitarVotoReporte(Long idReporte, Long idUsuario) throws Exception {
         VotarReporteRequest requestBody = new VotarReporteRequest();
         requestBody.setIdreporte(idReporte);
@@ -568,12 +573,13 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Elimina un comentario específico del sistema.
+     */
     public ApiResponse<?> eliminarComentario(Long idcomentario, Long idusuario) throws Exception {
-
         EliminarComentarioRequest eliminarComentarioRequest = new EliminarComentarioRequest();
         eliminarComentarioRequest.setIdcomentario(idcomentario);
         eliminarComentarioRequest.setIdusuario(idusuario);
-
 
         String jsonBody = gson.toJson(eliminarComentarioRequest);
 
@@ -594,6 +600,9 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Obtiene la lista de reportes que han sido votados por un usuario específico.
+     */
     public ApiResponse<?> obtenerReportesVotadosPorUsuario(Long idUsuario) throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -612,6 +621,9 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Obtiene todos los reportes creados por un usuario específico.
+     */
     public ApiResponse<?> obtenerReportesPorIdUsuario(Long idUsuario) throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -630,6 +642,9 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Obtiene todos los comentarios realizados por un usuario específico.
+     */
     public ApiResponse<?> obtenerComentariosPorIdUsuario(Long idUsuario) throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -648,6 +663,9 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Obtiene todos los comentarios asociados a un reporte específico.
+     */
     public ApiResponse<?> obtenerComentariosPorReporte(Long idReporte) throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -666,6 +684,9 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Obtiene la lista de colonias pertenecientes a un municipio específico.
+     */
     public ApiResponse<?> obtenerColonia(Long idmunicipio) throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -681,10 +702,12 @@ public class ClienteAPI {
             );
         }
 
-        // Parsear la respuesta
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Obtiene la información completa de un usuario por su identificador.
+     */
     public ApiResponse<?> getUsuarioPorId(Long idusuario) throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -704,6 +727,9 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Obtiene la información detallada de un reporte específico con datos relacionados.
+     */
     public ApiResponse<?> obtenerReportePorId(Long idreporte) throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
@@ -722,14 +748,36 @@ public class ClienteAPI {
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 
+    /**
+     * Obtiene la entidad completa de un reporte con todos sus identificadores de relaciones.
+     */
+    public ApiResponse<?> obtenerEntidadPorId(Long idreporte) throws Exception {
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/reporte/obtenerEntidadPorId/" + idreporte))
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    /**
+     * Actualiza el nombre de usuario y la colonia de un usuario existente.
+     */
     public ApiResponse<?> actualizarNombreUsuario(Long idusuario, String nuevoNombreUsuario, Long idcolonia) throws Exception {
-        // Crear el objeto ActualizarNombreUsuarioRequest
         ActualizarNombreUsuarioRequest request = new ActualizarNombreUsuarioRequest();
         request.setIdusuario(idusuario);
         request.setNuevoNombreUsuario(nuevoNombreUsuario);
         request.setIdcolonia(idcolonia);
 
-        // Convertir el objeto a JSON
         String jsonBody = gson.toJson(request);
 
         HttpResponse<String> response;
@@ -746,7 +794,6 @@ public class ClienteAPI {
             );
         }
 
-        // Parsear la respuesta
         return gson.fromJson(response.body(), ApiResponse.class);
     }
 }

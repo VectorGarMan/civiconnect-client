@@ -30,7 +30,6 @@ public class Login extends JDialog {
         setResizable(false);
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        // Agregar listener para cerrar el programa al cerrar la ventana
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -47,6 +46,9 @@ public class Login extends JDialog {
         setModal(true);
     }
 
+    /**
+     * Inicializa y configura todos los componentes visuales de la ventana de login.
+     */
     private void inicializarComponentes() {
         contentPane = new JPanel();
         contentPane.setBackground(new Color(245, 245, 245));
@@ -57,7 +59,6 @@ public class Login extends JDialog {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(10, 10, 10, 10);
 
-        // Logo CiviConnect
         try {
             BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/assets/CiviConnectCut.png"));
             Image scaledLogo = logoImg.getScaledInstance(400, 86, Image.SCALE_SMOOTH);
@@ -72,7 +73,6 @@ public class Login extends JDialog {
             System.err.println("Error al cargar el logo: " + e.getMessage());
         }
 
-        // Título "LOGIN"
         JLabel lblTitulo = new JLabel("LOGIN");
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 32));
         lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
@@ -82,7 +82,6 @@ public class Login extends JDialog {
         gbc.insets = new Insets(20, 10, 30, 10);
         contentPane.add(lblTitulo, gbc);
 
-        // Etiqueta Email
         JLabel lblEmail = new JLabel("Email:");
         lblEmail.setFont(new Font("Arial", Font.PLAIN, 14));
         gbc.gridx = 0;
@@ -91,7 +90,6 @@ public class Login extends JDialog {
         gbc.insets = new Insets(5, 10, 5, 10);
         contentPane.add(lblEmail, gbc);
 
-        // Campo de texto Email
         emailField = new JTextField(25);
         emailField.setFont(new Font("Arial", Font.PLAIN, 14));
         emailField.setPreferredSize(new Dimension(300, 35));
@@ -101,7 +99,6 @@ public class Login extends JDialog {
         gbc.insets = new Insets(0, 10, 15, 10);
         contentPane.add(emailField, gbc);
 
-        // Etiqueta Contraseña
         JLabel lblPassword = new JLabel("Contraseña:");
         lblPassword.setFont(new Font("Arial", Font.PLAIN, 14));
         gbc.gridx = 0;
@@ -110,7 +107,6 @@ public class Login extends JDialog {
         gbc.insets = new Insets(5, 10, 5, 10);
         contentPane.add(lblPassword, gbc);
 
-        // Campo de contraseña
         passwordField = new JPasswordField(25);
         passwordField.setFont(new Font("Arial", Font.PLAIN, 14));
         passwordField.setPreferredSize(new Dimension(300, 35));
@@ -120,7 +116,6 @@ public class Login extends JDialog {
         gbc.insets = new Insets(0, 10, 20, 10);
         contentPane.add(passwordField, gbc);
 
-        // Botón Login
         btnLogin = new JButton("Iniciar Sesión");
         btnLogin.setFont(new Font("Arial", Font.BOLD, 14));
         btnLogin.setBackground(new Color(70, 130, 180));
@@ -138,12 +133,10 @@ public class Login extends JDialog {
         gbc.insets = new Insets(10, 10, 20, 10);
         contentPane.add(btnLogin, gbc);
 
-        // Panel para los botones inferiores
         JPanel panelBotones = new JPanel();
         panelBotones.setLayout(new GridLayout(1, 2, 10, 0));
         panelBotones.setOpaque(false);
 
-        // Botón Registrar Usuario
         btnRegistrar = new JButton("Registrar Usuario");
         btnRegistrar.setFont(new Font("Arial", Font.PLAIN, 14));
         btnRegistrar.setBackground(new Color(209, 209, 209));
@@ -157,7 +150,6 @@ public class Login extends JDialog {
         });
         panelBotones.add(btnRegistrar);
 
-        // Botón Recuperar Contraseña
         btnRecuperar = new JButton("<html><br><center>Olvidé mi<br>contraseña</center><br></html>");
         btnRecuperar.setFont(new Font("Arial", Font.PLAIN, 14));
         btnRecuperar.setBackground(new Color(209, 209, 209));
@@ -178,7 +170,6 @@ public class Login extends JDialog {
         gbc.insets = new Insets(0, 10, 10, 10);
         contentPane.add(panelBotones, gbc);
 
-        // Cerrar con ESC
         contentPane.registerKeyboardAction(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 dispose();
@@ -186,6 +177,9 @@ public class Login extends JDialog {
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
     }
 
+    /**
+     * Procesa el intento de inicio de sesión validando credenciales y estableciendo la sesión.
+     */
     private void onLogin() {
         String email = emailField.getText().trim();
         String password = new String(passwordField.getPassword());
@@ -216,7 +210,6 @@ public class Login extends JDialog {
                     if ("OK".equals(status)) {
                         JOptionPane.showMessageDialog(this, mensaje, "Éxito", JOptionPane.INFORMATION_MESSAGE);
 
-                        // Mapear usuario usando el mismo patrón que cargarTiposDeUsuario
                         Object dataObj = response.getData();
                         Usuario usuarioLogueado = mapearUsuarioDesdeMapa(dataObj);
 
@@ -251,6 +244,9 @@ public class Login extends JDialog {
         }).start();
     }
 
+    /**
+     * Convierte los datos del usuario desde un mapa a un objeto Usuario.
+     */
     private Usuario mapearUsuarioDesdeMapa(Object dataObj) {
         if (dataObj instanceof Map<?, ?> usuarioMap) {
             Object idusuarioObj = usuarioMap.get("idusuario");
@@ -269,14 +265,12 @@ public class Login extends JDialog {
                 String emailUsuario = emailObj != null ? emailObj.toString() : "";
                 String nombreusuario = nombreusuarioObj != null ? nombreusuarioObj.toString() : "";
 
-                // Usar la fecha que viene del servidor directamente
                 LocalDate fecharegistro = null;
                 if (fecharegistroObj != null) {
                     try {
                         fecharegistro = LocalDate.parse(fecharegistroObj.toString());
                     } catch (Exception e) {
                         System.err.println("Error al parsear fecha: " + e.getMessage());
-                        // Si hay error, usar null y que el constructor de Usuario use su valor por defecto
                     }
                 }
 
@@ -296,9 +290,9 @@ public class Login extends JDialog {
                         idtipousuario,
                         idcolonia,
                         emailUsuario,
-                        "", // No guardar contraseña
+                        "",
                         nombreusuario,
-                        fecharegistro, // Usar la fecha del servidor (puede ser null)
+                        fecharegistro,
                         empleadogubverificado
                 );
             }
@@ -306,19 +300,27 @@ public class Login extends JDialog {
         return null;
     }
 
+    /**
+     * Cierra la ventana de login y abre la ventana de registro.
+     */
     private void onRegistrar() {
-        // Cerrar ventana de login y abrir registro
         dispose();
         Registro registroDialog = new Registro();
         registroDialog.setVisible(true);
     }
 
+    /**
+     * Cierra la ventana de login y abre la ventana de recuperación de contraseña.
+     */
     private void onRecuperar() {
         dispose();
         CambiarContrasena dialog = new CambiarContrasena();
         dialog.setVisible(true);
     }
 
+    /**
+     * Método principal para ejecutar la ventana de login de forma independiente.
+     */
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());

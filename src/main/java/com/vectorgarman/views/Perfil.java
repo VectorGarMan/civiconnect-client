@@ -1,22 +1,55 @@
 package com.vectorgarman.views;
 
-import com.vectorgarman.api.ClienteAPI;
-import com.vectorgarman.dto.*;
-import com.vectorgarman.utils.SessionManager;
-
-import javax.swing.*;
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.Window;
+import java.awt.event.ItemEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
+import com.vectorgarman.api.ClienteAPI;
+import com.vectorgarman.dto.ApiResponse;
+import com.vectorgarman.dto.Colonia;
+import com.vectorgarman.dto.Estado;
+import com.vectorgarman.dto.Municipio;
+import com.vectorgarman.dto.Ubicacion;
+import com.vectorgarman.dto.Usuario;
+import com.vectorgarman.utils.SessionManager;
+
 public class Perfil extends JFrame {
     private Usuario usuarioLogueado;
     
-    // Componentes de UI
     private JTextField txtNombreUsuario;
     private JButton btnEditarNombre;
     private JButton btnCancelarNombre;
@@ -58,17 +91,17 @@ public class Perfil extends JFrame {
         });
     }
 
+    /**
+     * Inicializa y configura todos los componentes visuales de la ventana de perfil.
+     */
     private void inicializarComponentes() {
-        // Panel principal
         JPanel panelPrincipal = new JPanel();
         panelPrincipal.setLayout(new BoxLayout(panelPrincipal, BoxLayout.Y_AXIS));
         panelPrincipal.setBackground(new Color(245, 245, 245));
         panelPrincipal.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
 
-        // Logo CiviConnect
         try {
             BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/assets/CiviConnectCut.png"));
-            // Escalar proporcionalmente: ancho 350px, altura = 350 * (330/1536) ≈ 75px
             Image scaledLogo = logoImg.getScaledInstance(350, 75, Image.SCALE_SMOOTH);
             JLabel lblLogo = new JLabel(new ImageIcon(scaledLogo));
             lblLogo.setHorizontalAlignment(SwingConstants.CENTER);
@@ -79,7 +112,6 @@ public class Perfil extends JFrame {
             System.err.println("Error al cargar el logo: " + e.getMessage());
         }
 
-        // Panel para el botón Salir (alineado a la izquierda)
         JPanel panelBotonSalir = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
         panelBotonSalir.setBackground(new Color(245, 245, 245));
         panelBotonSalir.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -92,7 +124,6 @@ public class Perfil extends JFrame {
         btnSalir.setFocusPainted(false);
         btnSalir.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        // Efecto hover para botón salir
         btnSalir.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -110,7 +141,6 @@ public class Perfil extends JFrame {
         btnSalir.addActionListener(e -> dispose());
         panelBotonSalir.add(btnSalir);
 
-        // Panel para el título (centrado)
         JPanel panelTitulo = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
         panelTitulo.setBackground(new Color(245, 245, 245));
         panelTitulo.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -121,12 +151,10 @@ public class Perfil extends JFrame {
         lblTitulo.setForeground(new Color(50, 50, 50));
         panelTitulo.add(lblTitulo);
 
-        // Separador
         JSeparator separador1 = new JSeparator();
         separador1.setMaximumSize(new Dimension(Integer.MAX_VALUE, 2));
         separador1.setForeground(new Color(200, 200, 200));
 
-        // Panel de información del usuario
         JPanel panelInfo = new JPanel();
         panelInfo.setLayout(new BoxLayout(panelInfo, BoxLayout.Y_AXIS));
         panelInfo.setBackground(Color.WHITE);
@@ -136,7 +164,6 @@ public class Perfil extends JFrame {
         ));
         panelInfo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 250));
 
-        // Email
         JLabel lblEmail = new JLabel(
                 (usuarioLogueado.getEmpleadogubverificado() != null && usuarioLogueado.getEmpleadogubverificado()
                         ? "Empleado Gubernamental Verificado - "
@@ -149,7 +176,6 @@ public class Perfil extends JFrame {
         lblEmail.setAlignmentX(Component.CENTER_ALIGNMENT);
         lblEmail.setForeground(new Color(100, 100, 100));
 
-        // Sección de nombre de usuario editable
         JLabel lblNombreLabel = new JLabel("Nombre de Usuario");
         lblNombreLabel.setFont(new Font("Arial", Font.BOLD, 13));
         lblNombreLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -162,7 +188,6 @@ public class Perfil extends JFrame {
         txtNombreUsuario.setEditable(false);
         txtNombreUsuario.setBackground(new Color(245, 245, 245));
         
-        // Panel de botones para nombre de usuario
         JPanel panelBotonesNombre = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         panelBotonesNombre.setBackground(Color.WHITE);
         panelBotonesNombre.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -195,7 +220,6 @@ public class Perfil extends JFrame {
         panelBotonesNombre.add(btnCancelarNombre);
         panelBotonesNombre.add(btnGuardarNombre);
 
-        // Agregar componentes al panel de información
         panelInfo.add(lblEmail);
         panelInfo.add(Box.createRigidArea(new Dimension(0, 20)));
         panelInfo.add(lblNombreLabel);
@@ -204,7 +228,6 @@ public class Perfil extends JFrame {
         panelInfo.add(Box.createRigidArea(new Dimension(0, 10)));
         panelInfo.add(panelBotonesNombre);
 
-        // Panel de ubicación
         JPanel panelUbicacion = new JPanel();
         panelUbicacion.setLayout(new BoxLayout(panelUbicacion, BoxLayout.Y_AXIS));
         panelUbicacion.setBackground(Color.WHITE);
@@ -214,7 +237,6 @@ public class Perfil extends JFrame {
         ));
         panelUbicacion.setMaximumSize(new Dimension(Integer.MAX_VALUE, 300));
 
-        // Panel para el título "Ubicación" (centrado)
         JPanel panelTituloUbicacion = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
         panelTituloUbicacion.setBackground(Color.WHITE);
         panelTituloUbicacion.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -225,26 +247,22 @@ public class Perfil extends JFrame {
         lblUbicacionTitulo.setForeground(new Color(50, 50, 50));
         panelTituloUbicacion.add(lblUbicacionTitulo);
 
-        // Panel horizontal para los comboboxes (Estado, Municipio, Colonia en una fila)
         JPanel panelCombos = new JPanel();
         panelCombos.setLayout(new GridLayout(2, 3, 10, 5));
         panelCombos.setBackground(Color.WHITE);
         panelCombos.setAlignmentX(Component.CENTER_ALIGNMENT);
         panelCombos.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
         
-        // Etiquetas
         JLabel lblEstado = new JLabel("Estado:");
         JLabel lblMunicipio = new JLabel("Municipio:");
         JLabel lblColonia = new JLabel("Colonia:");
         
-        // Comboboxes
         comboEstado = new JComboBox<>();
         comboMunicipio = new JComboBox<>();
         comboMunicipio.setEnabled(false);
         comboColonia = new JComboBox<>();
         comboColonia.setEnabled(false);
         
-        // Agregar en orden: primero las etiquetas, luego los comboboxes
         panelCombos.add(lblEstado);
         panelCombos.add(lblMunicipio);
         panelCombos.add(lblColonia);
@@ -252,7 +270,6 @@ public class Perfil extends JFrame {
         panelCombos.add(comboMunicipio);
         panelCombos.add(comboColonia);
 
-        // Panel de botón para guardar ubicación (centrado, mismo estilo que guardar nombre)
         JPanel panelBotonUbicacion = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         panelBotonUbicacion.setBackground(Color.WHITE);
         panelBotonUbicacion.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -268,14 +285,12 @@ public class Perfil extends JFrame {
         btnGuardarUbicacion.addActionListener(e -> guardarUbicacion());
         panelBotonUbicacion.add(btnGuardarUbicacion);
 
-        // Agregar componentes al panel de ubicación
         panelUbicacion.add(panelTituloUbicacion);
         panelUbicacion.add(Box.createRigidArea(new Dimension(0, 15)));
         panelUbicacion.add(panelCombos);
         panelUbicacion.add(Box.createRigidArea(new Dimension(0, 15)));
         panelUbicacion.add(panelBotonUbicacion);
 
-        // Panel para el botón Cerrar Sesión (alineado a la izquierda)
         JPanel panelBotonLogout = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
         panelBotonLogout.setBackground(new Color(245, 245, 245));
         panelBotonLogout.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -290,7 +305,6 @@ public class Perfil extends JFrame {
         btnLogout.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnLogout.setPreferredSize(new Dimension(175, 40));
 
-        // Efecto hover
         btnLogout.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -308,7 +322,6 @@ public class Perfil extends JFrame {
         btnLogout.addActionListener(e -> cerrarSesion());
         panelBotonLogout.add(btnLogout);
 
-        // Agregar componentes al panel principal
         panelPrincipal.add(panelBotonSalir);
         panelPrincipal.add(Box.createRigidArea(new Dimension(0, 10)));
         panelPrincipal.add(panelTitulo);
@@ -321,7 +334,6 @@ public class Perfil extends JFrame {
         panelPrincipal.add(Box.createRigidArea(new Dimension(0, 20)));
         panelPrincipal.add(panelBotonLogout);
 
-        // Scroll para el panel principal
         JScrollPane scrollPane = new JScrollPane(panelPrincipal);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -330,10 +342,8 @@ public class Perfil extends JFrame {
 
         add(scrollPane, BorderLayout.CENTER);
 
-        // Cargar datos de ubicación
         cargarEstadosYUbicacion();
         
-        // Configurar listeners para cascada de comboboxes
         comboEstado.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED && comboEstado.getSelectedItem() != null) {
                 Estado estadoSeleccionado = (Estado) comboEstado.getSelectedItem();
@@ -349,6 +359,9 @@ public class Perfil extends JFrame {
         });
     }
 
+    /**
+     * Habilita la edición del nombre de usuario mostrando los botones de guardar y cancelar.
+     */
     private void habilitarEdicionNombre() {
         txtNombreUsuario.setEditable(true);
         txtNombreUsuario.setBackground(Color.WHITE);
@@ -360,6 +373,9 @@ public class Perfil extends JFrame {
         btnGuardarNombre.setVisible(true);
     }
 
+    /**
+     * Cancela la edición del nombre de usuario restaurando el valor original.
+     */
     private void cancelarEdicionNombre() {
         txtNombreUsuario.setText(nombreUsuarioOriginal);
         txtNombreUsuario.setEditable(false);
@@ -370,6 +386,9 @@ public class Perfil extends JFrame {
         btnGuardarNombre.setVisible(false);
     }
 
+    /**
+     * Guarda el nuevo nombre de usuario enviando la actualización al servidor.
+     */
     private void guardarNombreUsuario() {
         String nuevoNombre = txtNombreUsuario.getText().trim();
         
@@ -393,7 +412,6 @@ public class Perfil extends JFrame {
             try {
                 ClienteAPI api = new ClienteAPI();
                 
-                // Obtener la colonia actual (puede ser la original o la nueva si se cambió)
                 Long idColoniaActual = idColoniaOriginal;
                 if (comboColonia.getSelectedItem() != null) {
                     Colonia coloniaSeleccionada = (Colonia) comboColonia.getSelectedItem();
@@ -440,6 +458,9 @@ public class Perfil extends JFrame {
         }).start();
     }
 
+    /**
+     * Guarda la nueva ubicación del usuario actualizando la colonia seleccionada.
+     */
     private void guardarUbicacion() {
         if (comboColonia.getSelectedItem() == null) {
             JOptionPane.showMessageDialog(this,
@@ -477,7 +498,6 @@ public class Perfil extends JFrame {
                         idColoniaOriginal = nuevaIdColonia;
                         usuarioLogueado.setIdcolonia(nuevaIdColonia);
                         
-                        // Actualizar la ubicación en SessionManager
                         actualizarUbicacionEnSession(nuevaIdColonia);
                         
                         JOptionPane.showMessageDialog(this,
@@ -510,6 +530,9 @@ public class Perfil extends JFrame {
         }).start();
     }
 
+    /**
+     * Actualiza la información de ubicación en la sesión del usuario.
+     */
     private void actualizarUbicacionEnSession(Long nuevaIdColonia) {
         new Thread(() -> {
             try {
@@ -526,15 +549,16 @@ public class Perfil extends JFrame {
         }).start();
     }
 
+    /**
+     * Carga el catálogo de estados y la ubicación actual del usuario.
+     */
     private void cargarEstadosYUbicacion() {
         new Thread(() -> {
             try {
                 ClienteAPI api = new ClienteAPI();
 
-                // Cargar estados primero
                 ApiResponse<?> responseEstados = api.obtenerEstados();
 
-                // Cargar ubicación del usuario
                 Ubicacion ubicacion = null;
                 if (usuarioLogueado != null && usuarioLogueado.getIdusuario() != null) {
                     ApiResponse<?> responseUbicacion = api.obtenerUbicacionPorIdUsuario(usuarioLogueado.getIdusuario());
@@ -572,7 +596,6 @@ public class Perfil extends JFrame {
                                 }
                             }
 
-                            // Seleccionar el estado del usuario si está disponible
                             if (ubicacionFinal != null) {
                                 seleccionarEstadoPorId(ubicacionFinal.getIdEstado());
                             } else if (comboEstado.getItemCount() > 0) {
@@ -593,6 +616,9 @@ public class Perfil extends JFrame {
         }).start();
     }
 
+    /**
+     * Selecciona un estado en el combo box por su identificador.
+     */
     private void seleccionarEstadoPorId(Long idEstado) {
         for (int i = 0; i < comboEstado.getItemCount(); i++) {
             Estado estado = comboEstado.getItemAt(i);
@@ -603,6 +629,9 @@ public class Perfil extends JFrame {
         }
     }
 
+    /**
+     * Selecciona un municipio en el combo box por su identificador.
+     */
     private void seleccionarMunicipioPorId(Long idMunicipio) {
         for (int i = 0; i < comboMunicipio.getItemCount(); i++) {
             Municipio municipio = comboMunicipio.getItemAt(i);
@@ -613,6 +642,9 @@ public class Perfil extends JFrame {
         }
     }
 
+    /**
+     * Selecciona una colonia en el combo box por su identificador.
+     */
     private void seleccionarColoniaPorId(Long idColonia) {
         for (int i = 0; i < comboColonia.getItemCount(); i++) {
             Colonia colonia = comboColonia.getItemAt(i);
@@ -623,6 +655,9 @@ public class Perfil extends JFrame {
         }
     }
 
+    /**
+     * Carga los municipios correspondientes al estado seleccionado.
+     */
     private void cargarMunicipios(Long idestado) {
         new Thread(() -> {
             try {
@@ -651,7 +686,6 @@ public class Perfil extends JFrame {
                             }
                         }
 
-                        // Seleccionar municipio del usuario si está disponible
                         Ubicacion ubicacion = SessionManager.getInstance().getUbicacionUsuario();
                         if (ubicacion != null && ubicacion.getIdEstado().equals(idestado)) {
                             seleccionarMunicipioPorId(ubicacion.getIdMunicipio());
@@ -671,6 +705,9 @@ public class Perfil extends JFrame {
         }).start();
     }
 
+    /**
+     * Carga las colonias correspondientes al municipio seleccionado.
+     */
     private void cargarColonias(Long idmunicipio) {
         new Thread(() -> {
             try {
@@ -699,7 +736,6 @@ public class Perfil extends JFrame {
                             }
                         }
 
-                        // Seleccionar colonia del usuario si está disponible
                         Ubicacion ubicacion = SessionManager.getInstance().getUbicacionUsuario();
                         if (ubicacion != null && ubicacion.getIdMunicipio().equals(idmunicipio)) {
                             seleccionarColoniaPorId(ubicacion.getIdColonia());
@@ -721,6 +757,9 @@ public class Perfil extends JFrame {
         }).start();
     }
 
+    /**
+     * Convierte los datos de ubicación desde un mapa a un objeto Ubicacion.
+     */
     private Ubicacion mapearUbicacion(Map<?, ?> ubicacionMap) {
         try {
             Long idEstado = ubicacionMap.get("idEstado") != null ?
@@ -743,6 +782,9 @@ public class Perfil extends JFrame {
         }
     }
 
+    /**
+     * Cierra la sesión del usuario actual y regresa a la pantalla de login.
+     */
     private void cerrarSesion() {
         int confirmacion = JOptionPane.showConfirmDialog(
                 this,
@@ -753,16 +795,13 @@ public class Perfil extends JFrame {
         );
 
         if (confirmacion == JOptionPane.YES_OPTION) {
-            // Cerrar sesión usando SessionManager
             SessionManager.getInstance().cerrarSesion();
 
-            // Cerrar todas las ventanas abiertas
             Window[] windows = Window.getWindows();
             for (Window window : windows) {
                 window.dispose();
             }
 
-            // Abrir ventana de login
             SwingUtilities.invokeLater(() -> {
                 Login loginDialog = new Login();
                 loginDialog.setVisible(true);
@@ -770,6 +809,3 @@ public class Perfil extends JFrame {
         }
     }
 }
-
-// Made with Bob
-
