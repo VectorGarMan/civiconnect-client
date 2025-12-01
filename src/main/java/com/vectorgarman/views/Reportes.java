@@ -965,7 +965,6 @@ public class Reportes extends JFrame {
         scrollDescripcion.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollDescripcion.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        // Solución propuesta (MÁS COMPACTA)
         JLabel lblSolucionpropuesta = new JLabel("Solución propuesta:");
         lblSolucionpropuesta.setFont(new Font("Arial", Font.BOLD, 13));
         lblSolucionpropuesta.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -2911,7 +2910,6 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
         scrollDescripcion.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollDescripcion.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        // Solución propuesta (editable)
         JLabel lblSolucionpropuesta = new JLabel("Solución propuesta:");
         lblSolucionpropuesta.setFont(new Font("Arial", Font.BOLD, 13));
         lblSolucionpropuesta.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -3736,7 +3734,6 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
         scrollDescripcion.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollDescripcion.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        // Solución propuesta (editable)
         JLabel lblSolucionpropuesta = new JLabel("Solución propuesta:");
         lblSolucionpropuesta.setFont(new Font("Arial", Font.BOLD, 13));
         lblSolucionpropuesta.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -4221,6 +4218,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                 if (e.getStateChange() == ItemEvent.SELECTED && comboEstadoUbic.getSelectedItem() != null) {
                     Map<?, ?> estadoSel = (Map<?, ?>) comboEstadoUbic.getSelectedItem();
                     Long idEstado = ((Number) estadoSel.get("idestado")).longValue();
+                    System.out.println("🔔 ItemListener de Estado disparado - Cargando municipios para estado ID: " + idEstado);
                     cargarMunicipiosParaReporte(idEstado, comboMunicipioUbic, comboColoniaUbic);
                 }
             }
@@ -4232,21 +4230,19 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                 if (e.getStateChange() == ItemEvent.SELECTED && comboMunicipioUbic.getSelectedItem() != null) {
                     Map<?, ?> municipioSel = (Map<?, ?>) comboMunicipioUbic.getSelectedItem();
                     Long idMunicipio = ((Number) municipioSel.get("idmunicipio")).longValue();
+                    System.out.println("🔔 ItemListener de Municipio disparado - Cargando colonias para municipio ID: " + idMunicipio);
                     cargarColoniasParaReporte(idMunicipio, comboColoniaUbic);
                 }
             }
         };
 
         // Cargar datos en los comboboxes y pre-seleccionar valores actuales
+        // NOTA: Los listeners se agregan DENTRO de cargarDatosEditarReporte después de completar la carga
         cargarDatosEditarReporte(comboEstadoUbic, comboMunicipioUbic, comboColoniaUbic,
                 comboCategoriaReporte, comboNivelPrioridad, comboEstadoReporte,
                 estadoActual, municipioActual, coloniaActual, categoriaActual,
                 prioridadActual, estadoReporteActual,
                 estadoUbicListener, municipioUbicListener);
-
-        // Agregar listeners DESPUÉS de la carga inicial
-        comboEstadoUbic.addItemListener(estadoUbicListener);
-        comboMunicipioUbic.addItemListener(municipioUbicListener);
 
         ventanaEditar.setVisible(true);
     }
@@ -4410,7 +4406,6 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
         scrollDescripcion.setPreferredSize(new Dimension(600, 80));
         scrollDescripcion.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Solución propuesta (SOLO LECTURA)
         JLabel lblSolucionLabel = new JLabel("Solución propuesta:");
         lblSolucionLabel.setFont(new Font("Arial", Font.BOLD, 13));
         lblSolucionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -4638,12 +4633,17 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
             try {
                 ClienteAPI api = new ClienteAPI();
 
-                // Cargar estados de ubicación
+                System.out.println("🔍 DEBUG - Cargando datos para editar reporte:");
+                System.out.println("   Estado actual del reporte: " + estadoActual);
+                System.out.println("   Municipio actual del reporte: " + municipioActual);
+                System.out.println("   Colonia actual del reporte: " + coloniaActual);
+
+                //  CARGAR estados de ubicación DEL REPORTE (no del usuario)
                 ApiResponse<?> responseEstados = api.obtenerEstados();
                 Long idEstadoSeleccionado = null;
                 
                 if ("OK".equals(responseEstados.getStatus()) && responseEstados.getData() instanceof List<?> estados) {
-                    // Buscar el ID del estado actual
+                    // Buscar el ID del estado actual DEL REPORTE
                     for (Object item : estados) {
                         if (item instanceof Map<?, ?> estadoMap) {
                             String nombre = estadoMap.get("nombre") != null ? estadoMap.get("nombre").toString() : "";
@@ -4666,13 +4666,13 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                     
                     Thread.sleep(100);
                     
-                    //  CARGAR MUNICIPIOS del estado seleccionado
+                    //  CARGAR MUNICIPIOS del estado DEL REPORTE
                     if (idEstadoSeleccionado != null) {
                         ApiResponse<?> responseMunicipios = api.obtenerMunicipios(idEstadoSeleccionado);
                         Long idMunicipioSeleccionado = null;
                         
                         if ("OK".equals(responseMunicipios.getStatus()) && responseMunicipios.getData() instanceof List<?> municipios) {
-                            // Buscar el ID del municipio actual
+                            // Buscar el ID del municipio actual DEL REPORTE
                             for (Object item : municipios) {
                                 if (item instanceof Map<?, ?> municipioMap) {
                                     String nombre = municipioMap.get("nombre") != null ? municipioMap.get("nombre").toString() : "";
@@ -4696,18 +4696,23 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                             
                             Thread.sleep(100);
                             
-                            //  CARGAR COLONIAS del municipio seleccionado
+                            //  CARGAR COLONIAS del municipio DEL REPORTE
                             if (idMunicipioSeleccionado != null) {
                                 ApiResponse<?> responseColonias = api.obtenerColonia(idMunicipioSeleccionado);
                                 
                                 if ("OK".equals(responseColonias.getStatus()) && responseColonias.getData() instanceof List<?> colonias) {
                                     SwingUtilities.invokeLater(() -> {
                                         comboColonia.removeAllItems();
+                                        System.out.println("📋 Colonias cargadas en el combobox:");
                                         for (Object item : colonias) {
                                             if (item instanceof Map<?, ?>) {
-                                                comboColonia.addItem((Map<?, ?>) item);
+                                                Map<?, ?> coloniaMap = (Map<?, ?>) item;
+                                                String nombreColonia = coloniaMap.get("nombre") != null ? coloniaMap.get("nombre").toString() : "null";
+                                                System.out.println("   - " + nombreColonia);
+                                                comboColonia.addItem(coloniaMap);
                                             }
                                         }
+                                        System.out.println("   Total de colonias: " + comboColonia.getItemCount());
                                         if (comboColonia.getItemCount() > 0) {
                                             comboColonia.setEnabled(true);
                                         }
@@ -4715,11 +4720,26 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                                     
                                     Thread.sleep(100);
                                     
-                                    //  SELECCIONAR VALORES DESPUÉS DE CARGAR TODO
+                                    //  SELECCIONAR VALORES DEL REPORTE DESPUÉS DE CARGAR TODO
                                     SwingUtilities.invokeLater(() -> {
+                                        System.out.println("🎯 Seleccionando items en comboboxes:");
+                                        System.out.println("   Intentando seleccionar estado: " + estadoActual);
                                         seleccionarItemPorNombre(comboEstado, estadoActual);
+                                        System.out.println("   Estado seleccionado: " + (comboEstado.getSelectedItem() != null ? ((Map<?,?>)comboEstado.getSelectedItem()).get("nombre") : "null"));
+                                        
+                                        System.out.println("   Intentando seleccionar municipio: " + municipioActual);
                                         seleccionarItemPorNombre(comboMunicipio, municipioActual);
+                                        System.out.println("   Municipio seleccionado: " + (comboMunicipio.getSelectedItem() != null ? ((Map<?,?>)comboMunicipio.getSelectedItem()).get("nombre") : "null"));
+                                        
+                                        System.out.println("   Intentando seleccionar colonia: " + coloniaActual);
                                         seleccionarItemPorNombre(comboColonia, coloniaActual);
+                                        System.out.println("   Colonia seleccionada: " + (comboColonia.getSelectedItem() != null ? ((Map<?,?>)comboColonia.getSelectedItem()).get("nombre") : "null"));
+                                        
+                                        //  AGREGAR LISTENERS DESPUÉS DE COMPLETAR LA SELECCIÓN
+                                        System.out.println("➕ Agregando ItemListeners a los comboboxes de ubicación");
+                                        comboEstado.addItemListener(estadoListener);
+                                        comboMunicipio.addItemListener(municipioListener);
+                                        System.out.println("✅ ItemListeners agregados - Carga completa");
                                     });
                                 }
                             }
@@ -4786,15 +4806,29 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
     // SELECCIONAR ITEM POR NOMBRE EN COMBOBOX
     // ============================================
     private void seleccionarItemPorNombre(JComboBox<Map<?, ?>> combo, String nombre) {
-        if (nombre == null || nombre.isEmpty()) return;
+        if (nombre == null || nombre.isEmpty()) {
+            System.out.println("⚠️ seleccionarItemPorNombre: nombre es null o vacío");
+            return;
+        }
         
+        System.out.println("🔎 Buscando '" + nombre + "' en combobox con " + combo.getItemCount() + " items:");
+        boolean encontrado = false;
         for (int i = 0; i < combo.getItemCount(); i++) {
             Map<?, ?> item = combo.getItemAt(i);
             Object nombreItem = item.get("nombre");
+            String nombreItemStr = nombreItem != null ? nombreItem.toString() : "null";
+            System.out.println("   [" + i + "] Comparando '" + nombre + "' con '" + nombreItemStr + "' -> " +
+                (nombreItem != null && nombreItem.toString().equalsIgnoreCase(nombre) ? "✓ MATCH" : "✗"));
+            
             if (nombreItem != null && nombreItem.toString().equalsIgnoreCase(nombre)) {
                 combo.setSelectedIndex(i);
+                System.out.println("   ✅ Item seleccionado en índice " + i);
+                encontrado = true;
                 break;
             }
+        }
+        if (!encontrado) {
+            System.out.println("   ❌ No se encontró el item '" + nombre + "'");
         }
     }
 
