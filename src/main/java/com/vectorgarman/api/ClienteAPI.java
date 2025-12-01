@@ -17,7 +17,7 @@ import java.util.List;
 
 public class ClienteAPI {
 
-    private static final String BASE_URL = "http://localhost:8080/api";
+    private static final String BASE_URL = "https://civiconnect-api.onrender.com/api";
 
     private final Gson gson = new GsonBuilder()
             .registerTypeAdapter(LocalDate.class,

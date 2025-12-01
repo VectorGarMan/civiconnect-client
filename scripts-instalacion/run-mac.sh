@@ -20,6 +20,10 @@ if [ ! -f "target/civiconnect-client.jar" ]; then
     exit 1
 fi
 
+# Configurar JAVA_HOME para usar Java 21
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home
+export PATH="$JAVA_HOME/bin:$PATH"
+
 java -jar target/civiconnect-client.jar
 
 if [ $? -ne 0 ]; then
@@ -27,5 +31,3 @@ if [ $? -ne 0 ]; then
     echo -e "${RED}X Error al ejecutar la aplicacion.${NC}"
     exit 1
 fi
-
-# Made with Bob

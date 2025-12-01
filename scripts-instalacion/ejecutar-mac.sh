@@ -101,5 +101,3 @@ if [ $? -ne 0 ]; then
     echo ""
     exit 1
 fi
-
-# Made with Bob

@@ -133,5 +133,3 @@ if %errorlevel% neq 0 (
 )
 
 endlocal
-
-@REM Made with Bob

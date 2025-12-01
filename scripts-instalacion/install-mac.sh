@@ -99,6 +99,9 @@ echo -e "${BLUE}[3/4] Compilando la aplicacion...${NC}"
 echo "Esto puede tomar unos minutos..."
 echo ""
 
+# Configurar JAVA_HOME para usar Java 21
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home
+
 mvn clean package -DskipTests
 check_error "Error al compilar la aplicacion"
 
@@ -128,5 +131,3 @@ if [ $? -ne 0 ]; then
     echo -e "${RED}X Error al ejecutar la aplicacion.${NC}"
     exit 1
 fi
-
-# Made with Bob

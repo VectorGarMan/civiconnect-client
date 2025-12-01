@@ -24,5 +24,3 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
-
-@REM Made with Bob

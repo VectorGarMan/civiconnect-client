@@ -38,5 +38,3 @@ public class ActualizarNombreUsuarioRequest {
         this.idcolonia = idcolonia;
     }
 }
-
-// Made with Bob
