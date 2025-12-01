@@ -703,4 +703,22 @@ public class ClienteAPI {
 
         return gson.fromJson(response.body(), ApiResponse.class);
     }
+
+    public ApiResponse<?> obtenerReportePorId(Long idreporte) throws Exception {
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/reporte/obtenerPorId/" + idreporte))
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
 }

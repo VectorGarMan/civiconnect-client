@@ -45,7 +45,7 @@ public class Reportes extends JFrame {
         cargarEstadosYUbicacion();
         cargarReportes();
 
-        setSize(1000, 700);
+        setSize(1200, 700);
 
         setLocationRelativeTo(null);
         setVisible(true);
@@ -62,6 +62,18 @@ public class Reportes extends JFrame {
     private void inicializarHeader() {
         JPanel header = new JPanel(new BorderLayout());
         header.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Panel izquierdo con botón de refrescar y filtros
+        JPanel panelIzquierdo = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        
+        // Botón de refrescar (solo icono) - mismo tamaño que btnCrearReporte
+        JButton btnLimpiarFiltros = new JButton("🔄");
+        btnLimpiarFiltros.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
+        btnLimpiarFiltros.setPreferredSize(new Dimension(45, 35));
+        btnLimpiarFiltros.setToolTipText("Restablecer filtros");
+        btnLimpiarFiltros.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnLimpiarFiltros.setFocusPainted(false);
+        btnLimpiarFiltros.addActionListener(e -> limpiarFiltros());
 
         JPanel filtrosPanel = new JPanel(new GridLayout(2, 3, 10, 5));
 
@@ -82,6 +94,35 @@ public class Reportes extends JFrame {
         filtrosPanel.add(comboEstado);
         filtrosPanel.add(comboMunicipio);
         filtrosPanel.add(comboColonia);
+        
+        // Botón para ver mis reportes
+        JButton btnMisReportes = new JButton("📝 Mis Reportes");
+        btnMisReportes.setFont(new Font("Arial", Font.BOLD, 11));
+        btnMisReportes.setPreferredSize(new Dimension(120, 35));
+        btnMisReportes.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnMisReportes.addActionListener(e -> cargarMisReportes());
+
+        // Botón para ver reportes votados
+        JButton btnReportesVotados = new JButton("❤️ Votados");
+        btnReportesVotados.setFont(new Font("Arial", Font.BOLD, 11));
+        btnReportesVotados.setPreferredSize(new Dimension(110, 35));
+        btnReportesVotados.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnReportesVotados.addActionListener(e -> cargarReportesVotados());
+
+        // Botón para ver mis comentarios
+        JButton btnMisComentarios = new JButton("💬 Mis Comentarios");
+        btnMisComentarios.setFont(new Font("Arial", Font.BOLD, 11));
+        btnMisComentarios.setPreferredSize(new Dimension(140, 35));
+        btnMisComentarios.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnMisComentarios.addActionListener(e -> cargarMisComentarios());
+        
+        // Agregar componentes al panel izquierdo
+        panelIzquierdo.add(btnLimpiarFiltros);
+        panelIzquierdo.add(filtrosPanel);
+        panelIzquierdo.add(Box.createHorizontalStrut(10));
+        panelIzquierdo.add(btnMisReportes);
+        panelIzquierdo.add(btnReportesVotados);
+        panelIzquierdo.add(btnMisComentarios);
 
         comboEstado.addItemListener(new ItemListener() {
             @Override
@@ -121,55 +162,21 @@ public class Reportes extends JFrame {
             }
         });
 
-        header.add(filtrosPanel, BorderLayout.WEST);
+        header.add(panelIzquierdo, BorderLayout.WEST);
 
-        // Botón para limpiar filtros
-        JButton btnLimpiarFiltros = new JButton("<html><br><center>Restablecer<br>filtros</center><br></html>");
-        btnLimpiarFiltros.setFont(new Font("Arial", Font.BOLD, 11));
-        btnLimpiarFiltros.setPreferredSize(new Dimension(100, 50));
-        btnLimpiarFiltros.addActionListener(e -> limpiarFiltros());
-
-        // Botón para crear reporte
+        // Panel derecho solo con botones de crear reporte y perfil
         JPanel botonesPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        
         btnCrearReporte = new JButton("➕");
         btnCrearReporte.setPreferredSize(new Dimension(45, 35));
         btnCrearReporte.addActionListener(e -> abrirVentanaCrearReporte());
 
-        // Botón de perfil
         btnPerfil = new JButton("👤");
         btnPerfil.setPreferredSize(new Dimension(45, 35));
         btnPerfil.addActionListener(e -> abrirVentanaPerfil());
 
-        // Botón para ver mis reportes
-        JButton btnMisReportes = new JButton("📝 Mis Reportes");
-        btnMisReportes.setFont(new Font("Arial", Font.BOLD, 11));
-        btnMisReportes.setPreferredSize(new Dimension(120, 35));
-        btnMisReportes.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnMisReportes.addActionListener(e -> cargarMisReportes());
-
-        // Botón para ver reportes votados
-        JButton btnReportesVotados = new JButton("❤️ Votados");
-        btnReportesVotados.setFont(new Font("Arial", Font.BOLD, 11));
-        btnReportesVotados.setPreferredSize(new Dimension(110, 35));
-        btnReportesVotados.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnReportesVotados.addActionListener(e -> cargarReportesVotados());
-
-        // Botón para ver mis comentarios
-        JButton btnMisComentarios = new JButton("💬 Mis Comentarios");
-        btnMisComentarios.setFont(new Font("Arial", Font.BOLD, 11));
-        btnMisComentarios.setPreferredSize(new Dimension(140, 35));
-        btnMisComentarios.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnMisComentarios.addActionListener(e -> cargarMisComentarios());
-
-        botonesPanel.add(btnLimpiarFiltros);
-        botonesPanel.add(Box.createHorizontalStrut(10));
-        botonesPanel.add(btnMisReportes);
-        botonesPanel.add(btnReportesVotados);
-        botonesPanel.add(btnMisComentarios);
-        botonesPanel.add(Box.createHorizontalStrut(10));
         botonesPanel.add(btnCrearReporte);
         botonesPanel.add(btnPerfil);
-
 
         header.add(botonesPanel, BorderLayout.EAST);
 
@@ -4465,7 +4472,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
 
         btnVerReporte.addActionListener(e -> {
             ventanaActual.dispose();
-            abrirVentanaComentarios(idReporte);
+            cargarYMostrarReportePorId(idReporte);
         });
 
         panelContenido.add(panelEncabezado);
@@ -4477,5 +4484,63 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
         tarjeta.setMaximumSize(new Dimension(850, tarjeta.getPreferredSize().height));
 
         return tarjeta;
+    }
+
+    // ============================================
+    // CARGAR Y MOSTRAR REPORTE POR ID
+    // ============================================
+    private void cargarYMostrarReportePorId(Long idReporte) {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ApiResponse<?> response = api.obtenerReportePorId(idReporte);
+
+                SwingUtilities.invokeLater(() -> {
+                    if (response == null) {
+                        JOptionPane.showMessageDialog(this,
+                                "No se recibió respuesta del servidor",
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+
+                    String status = response.getStatus() != null ? response.getStatus() : "";
+
+                    if ("OK".equals(status)) {
+                        Object dataObj = response.getData();
+
+                        if (dataObj instanceof Map<?, ?> reporteMap) {
+                            // Convertir a mapa mutable
+                            Map<String, Object> reporteMutable = convertirAMapaMutable(reporteMap);
+                            
+                            // Limpiar la lista actual y agregar solo este reporte
+                            todosLosReportes.clear();
+                            todosLosReportes.add(reporteMutable);
+                            
+                            // Mostrar el reporte
+                            reportesFiltrados = new ArrayList<>(todosLosReportes);
+                            mostrarReportesFiltrados();
+                        } else {
+                            JOptionPane.showMessageDialog(this,
+                                    "No se pudo cargar el reporte",
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE);
+                        }
+                    } else {
+                        String mensaje = response.getMensaje() != null ? response.getMensaje() : "Error desconocido";
+                        JOptionPane.showMessageDialog(this,
+                                "Error al cargar el reporte: " + mensaje,
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                        "Error al conectar con el servidor:\n" + ex.getMessage(),
+                        "Error de Conexión",
+                        JOptionPane.ERROR_MESSAGE));
+            }
+        }).start();
     }
 }
