@@ -862,8 +862,28 @@ public class Reportes extends JFrame {
             lblSinReportes.setAlignmentX(Component.CENTER_ALIGNMENT);
             panelListaReportes.add(lblSinReportes);
         } else {
-            // Mostrar reportes filtrados
-            for (Map<?, ?> reporteMap : reportesFiltrados) {
+            // Ordenar reportes por total de votos (de mayor a menor)
+            List<Map<?, ?>> reportesOrdenados = new ArrayList<>(reportesFiltrados);
+            reportesOrdenados.sort((r1, r2) -> {
+                Map<?, ?> reporteView1 = r1.get("reporteView") instanceof Map ? (Map<?, ?>) r1.get("reporteView") : null;
+                Map<?, ?> reporteView2 = r2.get("reporteView") instanceof Map ? (Map<?, ?>) r2.get("reporteView") : null;
+                
+                Long votos1 = 0L;
+                Long votos2 = 0L;
+                
+                if (reporteView1 != null && reporteView1.get("totalvotos") != null) {
+                    votos1 = ((Number) reporteView1.get("totalvotos")).longValue();
+                }
+                if (reporteView2 != null && reporteView2.get("totalvotos") != null) {
+                    votos2 = ((Number) reporteView2.get("totalvotos")).longValue();
+                }
+                
+                // Ordenar de mayor a menor (descendente)
+                return votos2.compareTo(votos1);
+            });
+            
+            // Mostrar reportes ordenados
+            for (Map<?, ?> reporteMap : reportesOrdenados) {
                 JPanel tarjeta = crearTarjetaReporte(reporteMap);
                 panelListaReportes.add(tarjeta);
                 panelListaReportes.add(Box.createRigidArea(new Dimension(0, 15)));
@@ -4938,8 +4958,8 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                     } else {
                         String mensaje = response.getMensaje() != null ? response.getMensaje() : "Error desconocido";
                         JOptionPane.showMessageDialog(this,
-                                "Error del servidor: " + mensaje + "\nStatus: " + status,
-                                "Error",
+                                "Mensaje del sistema: " + mensaje,
+                                "Mensaje",
                                 JOptionPane.ERROR_MESSAGE);
                     }
                 });
