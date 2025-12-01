@@ -4,9 +4,12 @@ import com.vectorgarman.api.ClienteAPI;
 import com.vectorgarman.dto.ApiResponse;
 
 import javax.swing.*;
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 public class CambiarContrasena extends JDialog {
 
@@ -28,10 +31,32 @@ public class CambiarContrasena extends JDialog {
         setModal(true);
         setResizable(false);
 
+        // Panel superior con logo y título
+        JPanel panelSuperior = new JPanel();
+        panelSuperior.setLayout(new BoxLayout(panelSuperior, BoxLayout.Y_AXIS));
+        panelSuperior.setBackground(Color.WHITE);
+        panelSuperior.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Logo CiviConnect
+        try {
+            BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/com/vectorgarman/assets/CiviConnectCut.png"));
+            // Escalar proporcionalmente: ancho 300px, altura = 300 * (330/1536) ≈ 64px
+            Image scaledLogo = logoImg.getScaledInstance(300, 64, Image.SCALE_SMOOTH);
+            JLabel lblLogo = new JLabel(new ImageIcon(scaledLogo));
+            lblLogo.setHorizontalAlignment(SwingConstants.CENTER);
+            lblLogo.setAlignmentX(Component.CENTER_ALIGNMENT);
+            panelSuperior.add(lblLogo);
+            panelSuperior.add(Box.createRigidArea(new Dimension(0, 10)));
+        } catch (IOException e) {
+            System.err.println("Error al cargar el logo: " + e.getMessage());
+        }
+
         JLabel titulo = new JLabel("Cambiar Contraseña", SwingConstants.CENTER);
         titulo.setFont(new Font("Arial", Font.BOLD, 18));
-        titulo.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
-        add(titulo, BorderLayout.NORTH);
+        titulo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panelSuperior.add(titulo);
+
+        add(panelSuperior, BorderLayout.NORTH);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
         addWindowListener(new WindowAdapter() {

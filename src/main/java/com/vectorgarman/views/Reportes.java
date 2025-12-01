@@ -5,9 +5,11 @@ import com.vectorgarman.dto.*;
 import com.vectorgarman.utils.SessionManager;
 
 import javax.swing.*;
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.*;
 import java.util.List;
 
@@ -63,6 +65,9 @@ public class Reportes extends JFrame {
         JPanel header = new JPanel(new BorderLayout());
         header.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
+        // Panel central con filtros y botones
+        JPanel panelCentral = new JPanel(new BorderLayout());
+        
         // Panel izquierdo con botón de refrescar y filtros
         JPanel panelIzquierdo = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         
@@ -162,10 +167,21 @@ public class Reportes extends JFrame {
             }
         });
 
-        header.add(panelIzquierdo, BorderLayout.WEST);
+        panelCentral.add(panelIzquierdo, BorderLayout.WEST);
 
-        // Panel derecho solo con botones de crear reporte y perfil
+        // Panel derecho con logo y botones de crear reporte y perfil
         JPanel botonesPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        
+        // Logo CiviConnect
+        try {
+            BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/com/vectorgarman/assets/CiviConnectCut.png"));
+            Image scaledLogo = logoImg.getScaledInstance(150, 32, Image.SCALE_SMOOTH);
+            JLabel lblLogo = new JLabel(new ImageIcon(scaledLogo));
+            lblLogo.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 10));
+            botonesPanel.add(lblLogo);
+        } catch (IOException e) {
+            System.err.println("Error al cargar el logo: " + e.getMessage());
+        }
         
         btnCrearReporte = new JButton("➕");
         btnCrearReporte.setPreferredSize(new Dimension(45, 35));
@@ -178,7 +194,9 @@ public class Reportes extends JFrame {
         botonesPanel.add(btnCrearReporte);
         botonesPanel.add(btnPerfil);
 
-        header.add(botonesPanel, BorderLayout.EAST);
+        panelCentral.add(botonesPanel, BorderLayout.EAST);
+        
+        header.add(panelCentral, BorderLayout.CENTER);
 
         add(header, BorderLayout.NORTH);
     }
@@ -3021,7 +3039,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
 
         // Botones
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        panelBotones.setBackground(Color.WHITE);
+        panelBotones.setBackground(new Color(245, 245, 245));
         panelBotones.setAlignmentX(Component.LEFT_ALIGNMENT);
         panelBotones.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
@@ -3032,12 +3050,12 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
 
         JButton btnCrear = new JButton("Crear Reporte");
         btnCrear.setFont(new Font("Arial", Font.BOLD, 13));
-        btnCrear.setBackground(new Color(13, 110, 253));
+        btnCrear.setBackground(new Color(25, 135, 84));
         btnCrear.setForeground(Color.WHITE);
         btnCrear.setFocusPainted(false);
         btnCrear.setBorderPainted(false);
         btnCrear.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnCrear.setPreferredSize(new Dimension(150, 35));
+        btnCrear.setPreferredSize(new Dimension(170, 35));
 
         btnCrear.addActionListener(e -> {
             // Validación
@@ -3838,7 +3856,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
 
         // Botones
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        panelBotones.setBackground(Color.WHITE);
+        panelBotones.setBackground(new Color(245, 245, 245));
         panelBotones.setAlignmentX(Component.LEFT_ALIGNMENT);
         panelBotones.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 

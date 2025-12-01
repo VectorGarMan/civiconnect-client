@@ -5,9 +5,12 @@ import com.vectorgarman.dto.ApiResponse;
 import com.vectorgarman.dto.Usuario;
 import com.vectorgarman.utils.SessionManager;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Map;
 
@@ -21,7 +24,7 @@ public class Login extends JDialog {
 
     public Login() {
         setTitle("CiviConnect - Login");
-        setSize(500, 450);
+        setSize(500, 520);
         setLocationRelativeTo(null);
         setResizable(false);
 
@@ -53,12 +56,27 @@ public class Login extends JDialog {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(10, 10, 10, 10);
 
+        // Logo CiviConnect
+        try {
+            BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/com/vectorgarman/assets/CiviConnectCut.png"));
+            Image scaledLogo = logoImg.getScaledInstance(400, 86, Image.SCALE_SMOOTH);
+            JLabel lblLogo = new JLabel(new ImageIcon(scaledLogo));
+            lblLogo.setHorizontalAlignment(SwingConstants.CENTER);
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            gbc.gridwidth = 2;
+            gbc.insets = new Insets(10, 10, 10, 10);
+            contentPane.add(lblLogo, gbc);
+        } catch (IOException e) {
+            System.err.println("Error al cargar el logo: " + e.getMessage());
+        }
+
         // Título "LOGIN"
         JLabel lblTitulo = new JLabel("LOGIN");
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 32));
         lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
         gbc.gridx = 0;
-        gbc.gridy = 0;
+        gbc.gridy = 1;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(20, 10, 30, 10);
         contentPane.add(lblTitulo, gbc);
@@ -67,7 +85,7 @@ public class Login extends JDialog {
         JLabel lblEmail = new JLabel("Email:");
         lblEmail.setFont(new Font("Arial", Font.PLAIN, 14));
         gbc.gridx = 0;
-        gbc.gridy = 1;
+        gbc.gridy = 2;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(5, 10, 5, 10);
         contentPane.add(lblEmail, gbc);
@@ -77,7 +95,7 @@ public class Login extends JDialog {
         emailField.setFont(new Font("Arial", Font.PLAIN, 14));
         emailField.setPreferredSize(new Dimension(300, 35));
         gbc.gridx = 0;
-        gbc.gridy = 2;
+        gbc.gridy = 3;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(0, 10, 15, 10);
         contentPane.add(emailField, gbc);
@@ -86,7 +104,7 @@ public class Login extends JDialog {
         JLabel lblPassword = new JLabel("Contraseña:");
         lblPassword.setFont(new Font("Arial", Font.PLAIN, 14));
         gbc.gridx = 0;
-        gbc.gridy = 3;
+        gbc.gridy = 4;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(5, 10, 5, 10);
         contentPane.add(lblPassword, gbc);
@@ -96,7 +114,7 @@ public class Login extends JDialog {
         passwordField.setFont(new Font("Arial", Font.PLAIN, 14));
         passwordField.setPreferredSize(new Dimension(300, 35));
         gbc.gridx = 0;
-        gbc.gridy = 4;
+        gbc.gridy = 5;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(0, 10, 20, 10);
         contentPane.add(passwordField, gbc);
@@ -114,7 +132,7 @@ public class Login extends JDialog {
             }
         });
         gbc.gridx = 0;
-        gbc.gridy = 5;
+        gbc.gridy = 6;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(10, 10, 20, 10);
         contentPane.add(btnLogin, gbc);
@@ -154,7 +172,7 @@ public class Login extends JDialog {
         panelBotones.add(btnRecuperar);
 
         gbc.gridx = 0;
-        gbc.gridy = 6;
+        gbc.gridy = 7;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(0, 10, 10, 10);
         contentPane.add(panelBotones, gbc);

@@ -5,8 +5,11 @@ import com.vectorgarman.dto.*;
 import com.vectorgarman.utils.SessionManager;
 
 import javax.swing.*;
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +46,7 @@ public class Perfil extends JFrame {
 
         inicializarComponentes();
 
-        setSize(700, 630);
+        setSize(700, 710);
         setLocationRelativeTo(null);
         setVisible(true);
 
@@ -61,6 +64,20 @@ public class Perfil extends JFrame {
         panelPrincipal.setLayout(new BoxLayout(panelPrincipal, BoxLayout.Y_AXIS));
         panelPrincipal.setBackground(new Color(245, 245, 245));
         panelPrincipal.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
+
+        // Logo CiviConnect
+        try {
+            BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/com/vectorgarman/assets/CiviConnectCut.png"));
+            // Escalar proporcionalmente: ancho 350px, altura = 350 * (330/1536) ≈ 75px
+            Image scaledLogo = logoImg.getScaledInstance(350, 75, Image.SCALE_SMOOTH);
+            JLabel lblLogo = new JLabel(new ImageIcon(scaledLogo));
+            lblLogo.setHorizontalAlignment(SwingConstants.CENTER);
+            lblLogo.setAlignmentX(Component.CENTER_ALIGNMENT);
+            panelPrincipal.add(lblLogo);
+            panelPrincipal.add(Box.createRigidArea(new Dimension(0, 15)));
+        } catch (IOException e) {
+            System.err.println("Error al cargar el logo: " + e.getMessage());
+        }
 
         // Panel para el botón Salir (alineado a la izquierda)
         JPanel panelBotonSalir = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));

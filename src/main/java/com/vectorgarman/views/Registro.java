@@ -4,8 +4,11 @@ import com.vectorgarman.api.ClienteAPI;
 import com.vectorgarman.dto.*;
 
 import javax.swing.*;
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -58,6 +61,22 @@ public class Registro extends JDialog {
         gbc.insets = new Insets(10, 10, 10, 10);
 
         int row = 0;
+
+        // Logo CiviConnect
+        try {
+            BufferedImage logoImg = ImageIO.read(getClass().getResourceAsStream("/com/vectorgarman/assets/CiviConnectCut.png"));
+            // Escalar proporcionalmente: ancho 400px, altura = 400 * (330/1536) ≈ 86px
+            Image scaledLogo = logoImg.getScaledInstance(400, 86, Image.SCALE_SMOOTH);
+            JLabel lblLogo = new JLabel(new ImageIcon(scaledLogo));
+            lblLogo.setHorizontalAlignment(SwingConstants.CENTER);
+            gbc.gridx = 0;
+            gbc.gridy = row++;
+            gbc.gridwidth = 4;
+            gbc.insets = new Insets(10, 10, 10, 10);
+            contentPane.add(lblLogo, gbc);
+        } catch (IOException e) {
+            System.err.println("Error al cargar el logo: " + e.getMessage());
+        }
 
         // Título "REGISTRO"
         JLabel lblTitulo = new JLabel("REGISTRO");
