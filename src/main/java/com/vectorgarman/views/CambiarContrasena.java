@@ -275,8 +275,13 @@ public class CambiarContrasena extends JDialog {
      * Cierra la ventana actual y abre la ventana de login.
      */
     private void volverALogin() {
-        dispose();
-        new Login().setVisible(true);
+        SwingUtilities.invokeLater(() -> {
+            dispose();
+            SwingUtilities.invokeLater(() -> {
+                Login login = new Login();
+                login.setVisible(true);
+            });
+        });
     }
 
     /**

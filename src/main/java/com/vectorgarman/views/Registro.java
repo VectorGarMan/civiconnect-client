@@ -325,9 +325,13 @@ public class Registro extends JDialog {
                                     message,
                                     "Registro Exitoso",
                                     JOptionPane.INFORMATION_MESSAGE);
-                            dispose();
-                            Login loginDialog = new Login();
-                            loginDialog.setVisible(true);
+                            SwingUtilities.invokeLater(() -> {
+                                dispose();
+                                SwingUtilities.invokeLater(() -> {
+                                    Login loginDialog = new Login();
+                                    loginDialog.setVisible(true);
+                                });
+                            });
                             break;
 
                         case "WARNING":
@@ -362,9 +366,13 @@ public class Registro extends JDialog {
      * Cierra la ventana de registro y abre la ventana de login.
      */
     private void onIniciarSesion() {
-        dispose();
-        Login loginDialog = new Login();
-        loginDialog.setVisible(true);
+        SwingUtilities.invokeLater(() -> {
+            dispose();
+            SwingUtilities.invokeLater(() -> {
+                Login loginDialog = new Login();
+                loginDialog.setVisible(true);
+            });
+        });
     }
 
     /**

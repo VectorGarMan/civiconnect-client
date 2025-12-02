@@ -304,18 +304,25 @@ public class Login extends JDialog {
      * Cierra la ventana de login y abre la ventana de registro.
      */
     private void onRegistrar() {
-        dispose();
-        Registro registroDialog = new Registro();
-        registroDialog.setVisible(true);
+        SwingUtilities.invokeLater(() -> {
+            dispose();
+            SwingUtilities.invokeLater(() -> {
+                Registro registroDialog = new Registro();
+                registroDialog.setVisible(true);
+            });
+        });
     }
 
     /**
      * Cierra la ventana de login y abre la ventana de recuperación de contraseña.
      */
     private void onRecuperar() {
-        dispose();
-        CambiarContrasena dialog = new CambiarContrasena();
-        dialog.setVisible(true);
+        SwingUtilities.invokeLater(() -> {
+            dispose();
+            SwingUtilities.invokeLater(() -> {
+                CambiarContrasena dialog = new CambiarContrasena();
+            });
+        });
     }
 
     /**
