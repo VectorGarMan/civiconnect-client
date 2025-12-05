@@ -89,11 +89,11 @@ public class ClienteAPI {
     /**
      * Obtiene todas las evidencias asociadas a un reporte específico.
      */
-    public ApiResponse<?> obtenerEvidenciaPorReporte(Long idreporte) throws Exception {
+    public ApiResponse<?> obtenerEvidenciaPorReporte() throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI(BASE_URL + "/reporte/evidencia/obtenerPorReporte/" + idreporte))
+                    .uri(new URI(BASE_URL + "/reporte/estadisticas/obtener"))
                     .header("Content-Type", "application/json")
                     .GET()
                     .build();
@@ -111,6 +111,28 @@ public class ClienteAPI {
      * Obtiene el catálogo de categorías disponibles para clasificar reportes.
      */
     public ApiResponse<?> obtenerCategoriasDeReporte() throws Exception {
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(BASE_URL + "/reporte/categoria/obtener"))
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            response = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        return gson.fromJson(response.body(), ApiResponse.class);
+    }
+
+    /**
+     * Obtiene las estadísticas de todos los reportes.
+     */
+    public ApiResponse<List<Estadisticas>> obtenerEstadisticas() throws Exception {
         HttpResponse<String> response;
         try (HttpClient client = HttpClient.newHttpClient()) {
 
