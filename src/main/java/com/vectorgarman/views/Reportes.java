@@ -134,7 +134,7 @@ public class Reportes extends JFrame {
         btnMisComentarios.addActionListener(e -> cargarMisComentarios());
 
         // Botón para ver estadísticas
-        JButton btnEstadisticas = new JButton("📊 Estadísticas");
+        JButton btnEstadisticas = new JButton("Estadísticas");
         btnEstadisticas.setFont(new Font("Arial", Font.BOLD, 11));
         btnEstadisticas.setPreferredSize(new Dimension(140, 35));
         btnEstadisticas.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -5273,7 +5273,7 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                 BorderFactory.createEmptyBorder(15, 20, 15, 20)
         ));
 
-        JLabel lblTitulo = new JLabel("📊 Estadísticas de Reportes por Categoría");
+        JLabel lblTitulo = new JLabel("Estadísticas de Reportes por Categoría");
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 18));
         lblTitulo.setForeground(new Color(30, 30, 30));
         lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
