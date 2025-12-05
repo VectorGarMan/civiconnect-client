@@ -115,14 +115,14 @@ public class Reportes extends JFrame {
         // Botón para ver mis reportes
         JButton btnMisReportes = new JButton("Mis Reportes");
         btnMisReportes.setFont(new Font("Arial", Font.BOLD, 11));
-        btnMisReportes.setPreferredSize(new Dimension(120, 35));
+        btnMisReportes.setPreferredSize(new Dimension(110, 35));
         btnMisReportes.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnMisReportes.addActionListener(e -> cargarMisReportes());
 
         // Botón para ver reportes votados
         JButton btnReportesVotados = new JButton("Votados");
         btnReportesVotados.setFont(new Font("Arial", Font.BOLD, 11));
-        btnReportesVotados.setPreferredSize(new Dimension(110, 35));
+        btnReportesVotados.setPreferredSize(new Dimension(80, 35));
         btnReportesVotados.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnReportesVotados.addActionListener(e -> cargarReportesVotados());
 
@@ -136,7 +136,7 @@ public class Reportes extends JFrame {
         // Botón para ver estadísticas
         JButton btnEstadisticas = new JButton("Estadísticas");
         btnEstadisticas.setFont(new Font("Arial", Font.BOLD, 11));
-        btnEstadisticas.setPreferredSize(new Dimension(140, 35));
+        btnEstadisticas.setPreferredSize(new Dimension(100, 35));
         btnEstadisticas.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnEstadisticas.addActionListener(e -> mostrarEstadisticas());
         
