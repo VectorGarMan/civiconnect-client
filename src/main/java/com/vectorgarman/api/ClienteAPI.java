@@ -137,7 +137,7 @@ public class ClienteAPI {
         try (HttpClient client = HttpClient.newHttpClient()) {
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI(BASE_URL + "/reporte/categoria/obtener"))
+                    .uri(new URI(BASE_URL + "/reporte/estadisticas/obtener"))
                     .header("Content-Type", "application/json")
                     .GET()
                     .build();

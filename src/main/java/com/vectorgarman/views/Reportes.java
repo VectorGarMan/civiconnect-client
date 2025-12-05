@@ -132,6 +132,13 @@ public class Reportes extends JFrame {
         btnMisComentarios.setPreferredSize(new Dimension(140, 35));
         btnMisComentarios.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnMisComentarios.addActionListener(e -> cargarMisComentarios());
+
+        // Botón para ver estadísticas
+        JButton btnEstadisticas = new JButton("📊 Estadísticas");
+        btnEstadisticas.setFont(new Font("Arial", Font.BOLD, 11));
+        btnEstadisticas.setPreferredSize(new Dimension(140, 35));
+        btnEstadisticas.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnEstadisticas.addActionListener(e -> mostrarEstadisticas());
         
         // Agregar componentes al panel izquierdo
         panelIzquierdo.add(btnLimpiarFiltros);
@@ -140,6 +147,7 @@ public class Reportes extends JFrame {
         panelIzquierdo.add(btnMisReportes);
         panelIzquierdo.add(btnReportesVotados);
         panelIzquierdo.add(btnMisComentarios);
+        panelIzquierdo.add(btnEstadisticas);
 
         // Guardar referencias a los listeners para poder removerlos temporalmente
         estadoListener = new ItemListener() {
@@ -5193,5 +5201,248 @@ private void actualizarBotónComentariosEnUI(Long idReporte, Long nuevoTotal) {
                         JOptionPane.ERROR_MESSAGE));
             }
         }).start();
+    }
+
+    // ============================================
+    // MOSTRAR ESTADÍSTICAS
+    // ============================================
+    private void mostrarEstadisticas() {
+        new Thread(() -> {
+            try {
+                ClienteAPI api = new ClienteAPI();
+                ApiResponse<List<Estadisticas>> response = api.obtenerEstadisticas();
+
+                SwingUtilities.invokeLater(() -> {
+                    if (response == null) {
+                        JOptionPane.showMessageDialog(this,
+                                "No se recibió respuesta del servidor",
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+
+                    String status = response.getStatus() != null ? response.getStatus() : "";
+
+                    if ("OK".equals(status)) {
+                        Object dataObj = response.getData();
+
+                        if (dataObj instanceof List<?> estadisticas) {
+                            mostrarVentanaEstadisticas(estadisticas);
+                        } else {
+                            JOptionPane.showMessageDialog(this,
+                                    "No se encontraron estadísticas o el formato es incorrecto",
+                                    "Información",
+                                    JOptionPane.INFORMATION_MESSAGE);
+                        }
+                    } else {
+                        String mensaje = response.getMensaje() != null ? response.getMensaje() : "Error desconocido";
+                        JOptionPane.showMessageDialog(this,
+                                "Error al obtener estadísticas: " + mensaje,
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                        "Error al conectar con el servidor:\n" + ex.getMessage(),
+                        "Error de Conexión",
+                        JOptionPane.ERROR_MESSAGE));
+            }
+        }).start();
+    }
+
+    // ============================================
+    // MOSTRAR VENTANA DE ESTADÍSTICAS
+    // ============================================
+    private void mostrarVentanaEstadisticas(List<?> estadisticas) {
+        JDialog ventana = new JDialog(this, "Estadísticas de Reportes", true);
+        ventana.setSize(900, 700);
+        ventana.setLocationRelativeTo(this);
+        ventana.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+        // Panel principal
+        JPanel panelPrincipal = new JPanel(new BorderLayout());
+        panelPrincipal.setBackground(new Color(240, 242, 245));
+
+        // Header
+        JPanel panelHeader = new JPanel(new BorderLayout());
+        panelHeader.setBackground(new Color(255, 255, 255));
+        panelHeader.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(220, 220, 220)),
+                BorderFactory.createEmptyBorder(15, 20, 15, 20)
+        ));
+
+        JLabel lblTitulo = new JLabel("📊 Estadísticas de Reportes por Categoría");
+        lblTitulo.setFont(new Font("Arial", Font.BOLD, 18));
+        lblTitulo.setForeground(new Color(30, 30, 30));
+        lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
+
+        panelHeader.add(lblTitulo, BorderLayout.CENTER);
+
+        // Panel de estadísticas
+        JPanel panelEstadisticas = new JPanel();
+        panelEstadisticas.setLayout(new BoxLayout(panelEstadisticas, BoxLayout.Y_AXIS));
+        panelEstadisticas.setBackground(new Color(240, 242, 245));
+        panelEstadisticas.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        if (estadisticas.isEmpty()) {
+            JLabel lblVacio = new JLabel("No hay estadísticas disponibles");
+            lblVacio.setFont(new Font("Arial", Font.ITALIC, 14));
+            lblVacio.setForeground(Color.GRAY);
+            lblVacio.setAlignmentX(Component.LEFT_ALIGNMENT);
+            panelEstadisticas.add(lblVacio);
+        } else {
+            for (Object obj : estadisticas) {
+                if (obj instanceof Map<?, ?> estadisticaMap) {
+                    JPanel tarjetaEstadistica = crearTarjetaEstadistica(estadisticaMap);
+                    tarjetaEstadistica.setAlignmentX(Component.LEFT_ALIGNMENT);
+                    panelEstadisticas.add(tarjetaEstadistica);
+                    panelEstadisticas.add(Box.createRigidArea(new Dimension(0, 20)));
+                }
+            }
+        }
+
+        // Scroll
+        JScrollPane scrollPane = new JScrollPane(panelEstadisticas);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setBorder(null);
+
+        panelPrincipal.add(panelHeader, BorderLayout.NORTH);
+        panelPrincipal.add(scrollPane, BorderLayout.CENTER);
+
+        ventana.add(panelPrincipal);
+        ventana.setVisible(true);
+    }
+
+    // ============================================
+    // CREAR TARJETA DE ESTADÍSTICA
+    // ============================================
+    private JPanel crearTarjetaEstadistica(Map<?, ?> estadisticaMap) {
+        String categoria = estadisticaMap.get("categoria") != null
+                ? estadisticaMap.get("categoria").toString() : "Sin categoría";
+        Long totalReportes = estadisticaMap.get("totalreportes") != null
+                ? ((Number) estadisticaMap.get("totalreportes")).longValue() : 0L;
+        Long pendientes = estadisticaMap.get("pendientes") != null
+                ? ((Number) estadisticaMap.get("pendientes")).longValue() : 0L;
+        Long enProceso = estadisticaMap.get("enproceso") != null
+                ? ((Number) estadisticaMap.get("enproceso")).longValue() : 0L;
+        Long solucionados = estadisticaMap.get("solucionados") != null
+                ? ((Number) estadisticaMap.get("solucionados")).longValue() : 0L;
+
+        // Panel principal
+        JPanel tarjeta = new JPanel();
+        tarjeta.setLayout(new BorderLayout(15, 0));
+        tarjeta.setBackground(Color.WHITE);
+        tarjeta.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 220, 220), 2),
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
+        tarjeta.setMaximumSize(new Dimension(850, 250));
+
+        // Panel izquierdo con información
+        JPanel panelInfo = new JPanel();
+        panelInfo.setLayout(new BoxLayout(panelInfo, BoxLayout.Y_AXIS));
+        panelInfo.setBackground(Color.WHITE);
+
+        // Título de categoría
+        JLabel lblCategoria = new JLabel(categoria);
+        lblCategoria.setFont(new Font("Arial", Font.BOLD, 20));
+        lblCategoria.setForeground(new Color(30, 30, 30));
+        lblCategoria.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Total de reportes
+        JLabel lblTotal = new JLabel("Total de reportes: " + totalReportes);
+        lblTotal.setFont(new Font("Arial", Font.PLAIN, 14));
+        lblTotal.setForeground(new Color(100, 100, 100));
+        lblTotal.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        panelInfo.add(lblCategoria);
+        panelInfo.add(Box.createRigidArea(new Dimension(0, 10)));
+        panelInfo.add(lblTotal);
+        panelInfo.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        // Panel de barras
+        JPanel panelBarras = new JPanel();
+        panelBarras.setLayout(new BoxLayout(panelBarras, BoxLayout.Y_AXIS));
+        panelBarras.setBackground(Color.WHITE);
+        panelBarras.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Barra de pendientes
+        panelBarras.add(crearBarraEstadistica("Pendientes", pendientes, totalReportes, new Color(255, 193, 7)));
+        panelBarras.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Barra de en proceso
+        panelBarras.add(crearBarraEstadistica("En Proceso", enProceso, totalReportes, new Color(33, 150, 243)));
+        panelBarras.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Barra de solucionados
+        panelBarras.add(crearBarraEstadistica("Solucionados", solucionados, totalReportes, new Color(76, 175, 80)));
+
+        panelInfo.add(panelBarras);
+
+        tarjeta.add(panelInfo, BorderLayout.CENTER);
+
+        return tarjeta;
+    }
+
+    // ============================================
+    // CREAR BARRA DE ESTADÍSTICA
+    // ============================================
+    private JPanel crearBarraEstadistica(String etiqueta, Long valor, Long total, Color color) {
+        JPanel panel = new JPanel(new BorderLayout(10, 0));
+        panel.setBackground(Color.WHITE);
+        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.setMaximumSize(new Dimension(800, 40));
+
+        // Etiqueta y valor
+        JPanel panelTexto = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        panelTexto.setBackground(Color.WHITE);
+        panelTexto.setPreferredSize(new Dimension(150, 30));
+
+        JLabel lblEtiqueta = new JLabel(etiqueta + ": ");
+        lblEtiqueta.setFont(new Font("Arial", Font.BOLD, 13));
+        lblEtiqueta.setForeground(new Color(60, 60, 60));
+
+        JLabel lblValor = new JLabel(String.valueOf(valor));
+        lblValor.setFont(new Font("Arial", Font.BOLD, 13));
+        lblValor.setForeground(color);
+
+        panelTexto.add(lblEtiqueta);
+        panelTexto.add(lblValor);
+
+        // Barra de progreso
+        JPanel panelBarra = new JPanel(new BorderLayout());
+        panelBarra.setBackground(new Color(240, 240, 240));
+        panelBarra.setPreferredSize(new Dimension(500, 30));
+        panelBarra.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+
+        // Calcular porcentaje
+        double porcentaje = total > 0 ? (valor.doubleValue() / total.doubleValue()) : 0;
+        int anchoBarra = (int) (500 * porcentaje);
+
+        JPanel barraRellena = new JPanel();
+        barraRellena.setBackground(color);
+        barraRellena.setPreferredSize(new Dimension(anchoBarra, 30));
+
+        // Etiqueta de porcentaje
+        JLabel lblPorcentaje = new JLabel(String.format("%.1f%%", porcentaje * 100));
+        lblPorcentaje.setFont(new Font("Arial", Font.BOLD, 12));
+        lblPorcentaje.setForeground(Color.WHITE);
+        lblPorcentaje.setHorizontalAlignment(SwingConstants.CENTER);
+
+        if (anchoBarra > 50) {
+            barraRellena.setLayout(new BorderLayout());
+            barraRellena.add(lblPorcentaje, BorderLayout.CENTER);
+        }
+
+        panelBarra.add(barraRellena, BorderLayout.WEST);
+
+        panel.add(panelTexto, BorderLayout.WEST);
+        panel.add(panelBarra, BorderLayout.CENTER);
+
+        return panel;
     }
 }
